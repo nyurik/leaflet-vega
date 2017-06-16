@@ -1,0 +1,20 @@
+{
+  "name": "leaflet-vega",
+  "version": "0.0.1",
+  "description": "Vega layer for Leaflet",
+  "main": "index.js",
+  "scripts": {
+    "build": "mkdir -p build && browserify src/VegaLayer.js > build/bundle.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
+  "contributors": [
+    "Nathan Reese <reese.nathan@gmail.com>"
+  ],
+  "repository": "nyurik/leaflet-vega",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "leaflet": "^1.0.3",
+    "vega": "^3.0.0-beta.34"
+  }
+}
