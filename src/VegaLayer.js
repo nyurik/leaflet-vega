@@ -8,6 +8,21 @@ L.vegaLayer = function (spec) {
 L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   initialize: function (spec) {
+
+    // Inject signals into the spec.  TODO: make it less hacky - avoid spec modification
+    if (!spec.signals) {
+      spec.signals = [];
+    } else if (!Array.isArray(spec.signals)) {
+      throw Error('signals must be an array');
+    }
+    const signals = new Set(['zoom', 'zoomscale', 'latitude', 'longitude']);
+    for (let sig of spec.signals) {
+      if (sig.name) signals.delete(sig.name);
+    }
+    for (let sig of signals) {
+      spec.signals.push({name: sig});
+    }
+
     this._spec = spec;
     L.Util.setOptions(this, {});
   },
@@ -25,26 +40,20 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     const size = this._map.getSize();
 
-    this._view = new Vega.View(Vega.parse(this._spec), {})
+    this._view = new Vega.View(Vega.parse(this._spec, {signals:{center:2, zoom:1}}), {signals:{center:null, zoom:0}})
       .logLevel(Vega.Warn)
       .renderer('canvas')
       .padding({left: 0, right: 0, top: 0, bottom: 0})
-      .initialize(this._vegaContainer/*, size.x, size.y*/)
-      .width(600)
-      .height(600)
-      .hover()
-      .run();
+      .initialize(this._vegaContainer)
+      .hover();
+    this._reset();
 
     map.on('moveend', () => {
-      this._view
-        .signal('center', map.getCenter())
-        .run();
+      this._reset();
     });
 
     map.on('zoomend', () => {
-      this._view
-        .signal('zoom', map.getZoom())
-        .run();
+      this._reset();
     });
   },
 
@@ -52,22 +61,27 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // FIXME: TODO
   },
 
-  // From: https://github.com/Leaflet/Leaflet.heat/blob/gh-pages/src/HeatLayer.js
-  // _reset: function () {
-  //   var topLeft = this._map.containerPointToLayerPoint([0, 0]);
-  //   L.DomUtil.setPosition(this._canvas, topLeft);
-  //
-  //   var size = this._map.getSize();
-  //
-  //   if (this._heat._width !== size.x) {
-  //     this._canvas.width = this._heat._width  = size.x;
-  //   }
-  //   if (this._heat._height !== size.y) {
-  //     this._canvas.height = this._heat._height = size.y;
-  //   }
-  //
-  //   this._redraw();
-  // },
+  _reset: function () {
+    const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+    L.DomUtil.setPosition(this._vegaContainer, topLeft);
+
+    const size = this._map.getSize();
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+
+    // 256 is the tile size. The world's width is (256 * 2^zoom)
+    // d3 mercator scaling is (world / 2 / PI)
+    const scale = 256 * Math.pow(2, zoom) / 2 / Math.PI;
+
+    this._view
+      .width(size.x)
+      .height(size.y)
+      .signal('latitude', center.lat)
+      .signal('longitude', center.lng)
+      .signal('zoom', zoom)
+      .signal('zoomscale', scale)
+      .run();
+  },
 
 });
 
