@@ -12,8 +12,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // FIXME: uses window.vega
     vega: window && window.vega,
 
-    // If false, graph will be repainted only after the map has finished moving
-    smooth: true
+    // If true, graph will be repainted only after the map has finished moving
+    delayRepaint: true,
+
+    // Options to be passed to the Vega's parse method
+    parseConfig: undefined,
+
+    // Options to be passed ot the Vega's View constructor
+    viewConfig: undefined,
   },
 
   initialize: function (spec, options) {
@@ -33,7 +39,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     const vega = this.options.vega;
 
-    this._view = new vega.View(vega.parse(this._spec))
+    const dataflow = vega.parse(this._spec, this.options.parseConfigp);
+
+    this._view = new vega.View(dataflow, this.options.viewConfig)
       .logLevel(vega.Warn)
       .renderer('canvas')
       .padding({left: 0, right: 0, top: 0, bottom: 0})
@@ -46,7 +54,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     this._reset();
 
-    map.on(this.options.smooth ? 'move' : 'moveend', () => this._reset());
+    map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._reset());
     map.on('zoomend', () => this._reset());
   },
 
