@@ -28,6 +28,9 @@
     "padding": 0,
     "autosize": "none",
 
+    // Make sure the legend stays in place
+    "delayRepaint": false,
+
 //    "signals": [
 //      {
 //        "name": "zoom",
@@ -143,7 +146,45 @@
           { "type": "geoshape", "projection": "projection" }
         ]
       }
-    ]
+    ],
+
+    "legends": [
+      {
+        "fill": "color",
+        "orient": "top-right",
+        "title": "Unemployment",
+        "titlePadding": 10,
+        "padding": 12,
+        "offset": 20,
+        "format": "0%",
+        "encode": {
+          "labels": {
+            "interactive": true,
+            "enter": {
+              "text": {"signal": "replace(datum.label,'–',' – ')"},
+              "fontSize": {"value": 12}
+            },
+            "update": {
+              "fill": {"value": "black"}
+            },
+            "hover": {
+              "fill": {"value": "firebrick"}
+            }
+          },
+          "title": {"update": {"fontSize": {"value": 14}}},
+          "legend": {
+            "enter": {
+              "stroke": {"value": "#000"},
+              "fill": {"value": "#fff"},
+              "fillOpacity": {"value": 0.6},
+              "strokeOpacity": {"value": 0.2},
+              "strokeWidth": {"value": 1.5}
+            }
+          }
+        }
+      }
+    ],
+
   };
 
   const map = L.map('map').setView([40.7128, -74.0059], 4);
