@@ -23,8 +23,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   initialize: function (spec, options) {
-    this._spec = this._updateGraphSpec(spec);
     L.Util.setOptions(this, options);
+    this._spec = this._updateGraphSpec(spec);
   },
 
   addTo: function (map) {
@@ -52,7 +52,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     this._view.addSignalListener('longitude', (name, value) => this._onSignalChange(name, value));
     this._view.addSignalListener('zoom', (name, value) => this._onSignalChange(name, value));
 
-    this._reset();
+    this._reset(true);
 
     map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._reset());
     map.on('zoomend', () => this._reset());
@@ -86,7 +86,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     this._reset();
   },
 
-  _reset: function () {
+  _reset: function (force) {
 
     const map = this._map;
     const view = this._view;
@@ -102,14 +102,24 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // d3 mercator scaling is (world / 2 / PI)
     const zoomscale = 256 * Math.pow(2, zoom) / 2 / Math.PI;
 
-    if (view.signal('width') !== size.x) view.signal('width', size.x);
-    if (view.signal('height') !== size.y) view.signal('height', size.y);
-    if (view.signal('latitude') !== center.lat) view.signal('latitude', center.lat);
-    if (view.signal('longitude') !== center.lng) view.signal('longitude', center.lng);
-    if (view.signal('zoom') !== zoom) view.signal('zoom', zoom);
-    if (view.signal('zoomscale') !== zoomscale) view.signal('zoomscale', zoomscale);
+    function sendSignal(sig, value) {
+      if (view.signal(sig) !== value) {
+        view.signal(sig, value);
+        return 1;
+      }
+      return 0;
+    }
 
-    view.run();
+    // Only send changed signals to Vega
+    let changed = 0;
+    changed |= sendSignal('width', size.x);
+    changed |= sendSignal('height', size.y);
+    changed |= sendSignal('latitude', center.lat);
+    changed |= sendSignal('longitude', center.lng);
+    changed |= sendSignal('zoom', zoom);
+    changed |= sendSignal('zoomscale', zoomscale);
+
+    if (changed || force) view.run();
   },
 
   /*
@@ -165,6 +175,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     overrideField(spec, 'padding', 0);
     overrideField(spec, 'autosize', 'none');
+
+    // FIXME: this is an extension of Vega spec, might need a better way/naming
+    if (spec.delayRepaint !== undefined) {
+      this.options.delayRepaint = spec.delayRepaint;
+      delete spec.delayRepaint;
+    }
 
     return spec;
   }
