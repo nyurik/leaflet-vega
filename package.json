@@ -2,19 +2,30 @@
   "name": "leaflet-vega",
   "version": "0.0.1",
   "description": "Vega layer for Leaflet",
-  "main": "index.js",
-  "scripts": {
-    "build": "mkdir -p build && browserify src/VegaLayer.js > build/bundle.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
   "contributors": [
     "Nathan Reese <reese.nathan@gmail.com>"
   ],
+  "keywords": [
+    "vega",
+    "leaflet"
+  ],
   "repository": "nyurik/leaflet-vega",
-  "license": "BSD-3-Clause",
+  "license": "BSD-2-Clause",
   "dependencies": {
     "leaflet": "^1.0.3",
     "vega": "^3.0.0-beta.34"
+  },
+  "devDependencies": {
+    "eslint": "^4.0.0",
+    "eslint-config-mourner": "^2.0.1",
+    "uglify-js-es6": "^2.8.9"
+  },
+  "scripts": {
+    "test": "eslint src",
+    "prepublish": "uglifyjs node_modules/vega/build/vega.js src/VegaLayer.js -c -m -o dist/leaflet-vega.js",
+    "lint": "eslint index.js test/test*.js",
+    "pretest": "npm run lint"
   }
 }

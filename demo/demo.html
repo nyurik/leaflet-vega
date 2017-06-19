@@ -4,11 +4,12 @@
   <meta charset="UTF-8">
   <title>Demo!</title>
 
-  <!--<script src="node_modules/vega/build/vega.js"></script>-->
-  <script src="build/bundle.js"></script>
-  <!--<script src="node_modules/leaflet/dist/leaflet-src.js"></script>-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/vega@3.0.0-beta.34/build/vega.js"></script>
+  <script src="../src/VegaLayer.js"></script>
 
-  <link href="node_modules/leaflet/dist/leaflet.css" rel="stylesheet">
+
 
 </head>
 
@@ -27,35 +28,35 @@
     "padding": 0,
     "autosize": "none",
 
-    "signals": [
-      {
-        "name": "zoom",
+//    "signals": [
+//      {
+//        "name": "zoom",
 //        "on": [{"events": "click", "update": "10"}]
-      },
-      {
-        "name": "zoomscale",
-        "value": 300
-      },
-      {
-        "name": "longitude",
-        "value": -74.0059
-      },
-      {
-        "name": "latitude",
-        "value": 40.7128
-      }
-    ],
+//      },
+//      {
+//        "name": "zoomscale",
+//        "value": 300
+//      },
+//      {
+//        "name": "longitude",
+//        "value": -74.0059
+//      },
+//      {
+//        "name": "latitude",
+//        "value": 40.7128
+//      }
+//    ],
 
-    "projections": [
-      {
-        "name": "projection",
-        "type": "mercator",
-        "scale": {"signal": "zoomscale"},
-        "rotate": [{"signal": "-longitude"}, 0, 0],
-        "center": [0, {"signal": "latitude"}],
-        "translate": [{"signal": "width/2"}, {"signal": "height/2"}]
-      }
-    ],
+//    "projections": [
+//      {
+//        "name": "projection",
+//        "type": "mercator",
+//        "scale": {"signal": "zoomscale"},
+//        "rotate": [{"signal": "-longitude"}, 0, 0],
+//        "center": [0, {"signal": "latitude"}],
+//        "translate": [{"signal": "width/2"}, {"signal": "height/2"}]
+//      }
+//    ],
 
     "data": [
       {
@@ -80,12 +81,12 @@
           "feature": "countries"
         }
       },
-      {
-        "name": "graticule",
-        "transform": [
-          { "type": "graticule", "step": [15, 15] }
-        ]
-      }
+//      {
+//        "name": "graticule",
+//        "transform": [
+//          { "type": "graticule", "step": [15, 15] }
+//        ]
+//      }
     ],
 
     "scales": [
@@ -98,20 +99,20 @@
     ],
 
     "marks": [
-      {
-        "type": "shape",
-        "from": {"data": "graticule"},
-        "encode": {
-          "enter": {
-            "strokeWidth": {"value": 1},
-            "stroke": {"value": "#ddd"},
-            "fill": {"value": null}
-          }
-        },
-        "transform": [
-          { "type": "geoshape", "projection": "projection" }
-        ]
-      },
+//      {
+//        "type": "shape",
+//        "from": {"data": "graticule"},
+//        "encode": {
+//          "enter": {
+//            "strokeWidth": {"value": 1},
+//            "stroke": {"value": "#ddd"},
+//            "fill": {"value": null}
+//          }
+//        },
+//        "transform": [
+//          { "type": "geoshape", "projection": "projection" }
+//        ]
+//      },
 //      {
 //        "type": "shape",
 //        "from": {"data": "world"},

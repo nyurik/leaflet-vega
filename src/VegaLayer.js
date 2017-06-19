@@ -1,5 +1,6 @@
-L = require('leaflet');
-Vega = require('vega');
+'use strict';
+
+/*global L*/
 
 L.vegaLayer = function (spec) {
   return new L.VegaLayer(spec);
@@ -7,10 +8,17 @@ L.vegaLayer = function (spec) {
 
 L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
-  initialize: function (spec) {
-    this._injectSpecSignals(spec);
-    this._spec = spec;
-    L.Util.setOptions(this, {});
+  options: {
+    // FIXME: uses window.vega
+    vega: window && window.vega,
+
+    // If false, graph will be repainted only after the map has finished moving
+    smooth: true
+  },
+
+  initialize: function (spec, options) {
+    this._spec = this._updateGraphSpec(spec);
+    L.Util.setOptions(this, options);
   },
 
   addTo: function (map) {
@@ -20,11 +28,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   onAdd: function (map) {
     this._map = map;
-    this._vegaContainer = L.DomUtil.create('div', 'someclass');
+    this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
     map._panes.overlayPane.appendChild(this._vegaContainer);
 
-    this._view = new Vega.View(Vega.parse(this._spec))
-      .logLevel(Vega.Warn)
+    const vega = this.options.vega;
+
+    this._view = new vega.View(vega.parse(this._spec))
+      .logLevel(vega.Warn)
       .renderer('canvas')
       .padding({left: 0, right: 0, top: 0, bottom: 0})
       .initialize(this._vegaContainer)
@@ -36,7 +46,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     this._reset();
 
-    map.on('moveend', () => this._reset());
+    map.on(this.options.smooth ? 'move' : 'moveend', () => this._reset());
     map.on('zoomend', () => this._reset());
   },
 
@@ -98,19 +108,57 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
    Inject signals into the spec
    TODO: make it less hacky - avoid spec modification
    */
-  _injectSpecSignals: function (spec) {
-    if (!spec.signals) {
-      spec.signals = [];
-    } else if (!Array.isArray(spec.signals)) {
-      throw Error('signals must be an array');
+  _updateGraphSpec: function (spec) {
+    /*
+    Find all names that are not defined in the spec's section
+     */
+    function findUndefined(spec, section, names) {
+      if (!spec.hasOwnProperty(section)) {
+        spec[section] = [];
+        return names;
+      } else if (!Array.isArray(spec[section])) {
+        throw new Error('signals must be an array');
+      }
+
+      names = new Set(names);
+      for (let obj of spec[section]) {
+        // If obj has a name field, delete that name from the names
+        // Set will silently ignore delete() for undefined names
+        if (obj.name) names.delete(obj.name);
+      }
+      return names;
     }
-    const signals = new Set(['zoom', 'zoomscale', 'latitude', 'longitude']);
-    for (let sig of spec.signals) {
-      if (sig.name) signals.delete(sig.name);
+
+    /*
+     Set spec field, and warn if overriding
+      */
+    function overrideField(spec, name, value) {
+      if (spec[name] && spec[name] !== value) {
+        console.log(`Overriding ${name} 𐃘 ${value}`);
+      }
+      spec[name] = value;
     }
-    for (let sig of signals) {
+
+    const mapSignals = ['zoom', 'zoomscale', 'latitude', 'longitude'];
+    for (let sig of findUndefined(spec, 'signals', mapSignals)) {
       spec.signals.push({name: sig});
     }
+
+    for (let prj of findUndefined(spec, 'projections', ['projection'])) {
+      spec.projections.push({
+        name: prj,
+        type: 'mercator',
+        scale: {signal: 'zoomscale'},
+        rotate: [{signal: '-longitude'}, 0, 0],
+        center: [0, {signal: 'latitude'}],
+        translate: [{signal: 'width/2'}, {signal: 'height/2'}]
+      });
+    }
+
+    overrideField(spec, 'padding', 0);
+    overrideField(spec, 'autosize', 'none');
+
+    return spec;
   }
 
 });
