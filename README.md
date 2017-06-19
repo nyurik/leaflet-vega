@@ -7,4 +7,4 @@ This Leaflet plugin adds a Vega layer on top of the map, and provides two way si
 
 # Getting started
 * Clone the repo
-* open demo/demo.html file directly in your browser. No server is needed.
+* open `demo/demo.html` file directly in your browser. No server is needed.
