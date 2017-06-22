@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/nyurik/leaflet-vega.svg?branch=master)](https://travis-ci.org/nyurik/leaflet-vega)[![npm version](https://img.shields.io/npm/v/leaflet-vega.svg?style=flat-square)](https://www.npmjs.com/package/nyurik)
+
 # leaflet-vega
 Leaflet layer based on Vega visualization grammar
 
