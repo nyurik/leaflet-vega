@@ -6,14 +6,12 @@ L.vegaLayer = function (spec) {
   return new L.VegaLayer(spec);
 };
 
+//noinspection JSUnusedGlobalSymbols
 L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   options: {
     // FIXME: uses window.vega
     vega: window && window.vega,
-
-    // If true, graph will be repainted only after the map has finished moving
-    delayRepaint: true,
 
     // Options to be passed to the Vega's parse method
     parseConfig: undefined,
@@ -98,15 +96,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     const center = map.getCenter();
     const zoom = map.getZoom();
 
-    // 256 is the tile size in pixels. The world's width is (256 * 2^zoom)
-    // d3 mercator scaling is (world / 2 / PI)
-    const zoomscale = 256 * Math.pow(2, zoom) / 2 / Math.PI;
-
     function sendSignal(sig, value) {
       if (view.signal(sig) !== value) {
         view.signal(sig, value);
         return 1;
       }
+
       return 0;
     }
 
@@ -117,7 +112,6 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     changed |= sendSignal('latitude', center.lat);
     changed |= sendSignal('longitude', center.lng);
     changed |= sendSignal('zoom', zoom);
-    changed |= sendSignal('zoomscale', zoomscale);
 
     if (changed || force) view.run();
   },
@@ -127,8 +121,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
    TODO: make it less hacky - avoid spec modification
    */
   _updateGraphSpec: function (spec) {
-    /*
-    Find all names that are not defined in the spec's section
+    /**
+     * Find all names that are not defined in the spec's section
+     * @param {object} spec
+     * @param {string} section
+     * @param {Iterable.<string>} names
+     * @return {Iterable.<string>}
      */
     function findUndefined(spec, section, names) {
       if (!spec.hasOwnProperty(section)) {
@@ -147,9 +145,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       return names;
     }
 
-    /*
-     Set spec field, and warn if overriding
-      */
+    /**
+     * Set spec field, and warn if overriding
+     * @param {object} spec
+     * @param {string} name
+     * @param {*} value
+     */
     function overrideField(spec, name, value) {
       if (spec[name] && spec[name] !== value) {
         console.log(`Overriding ${name} 𐃘 ${value}`);
@@ -157,7 +158,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       spec[name] = value;
     }
 
-    const mapSignals = ['zoom', 'zoomscale', 'latitude', 'longitude'];
+    const mapSignals = ['zoom', 'latitude', 'longitude'];
     for (let sig of findUndefined(spec, 'signals', mapSignals)) {
       spec.signals.push({name: sig});
     }
@@ -166,7 +167,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       spec.projections.push({
         name: prj,
         type: 'mercator',
-        scale: {signal: 'zoomscale'},
+        scale: {signal: '256*pow(2,zoom)/2/PI'},
         rotate: [{signal: '-longitude'}, 0, 0],
         center: [0, {signal: 'latitude'}],
         translate: [{signal: 'width/2'}, {signal: 'height/2'}]
@@ -180,6 +181,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     if (spec.delayRepaint !== undefined) {
       this.options.delayRepaint = spec.delayRepaint;
       delete spec.delayRepaint;
+    } else {
+      this.options.delayRepaint = true; // default
     }
 
     return spec;

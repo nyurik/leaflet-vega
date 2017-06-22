@@ -31,36 +31,6 @@
     // Make sure the legend stays in place
     "delayRepaint": false,
 
-//    "signals": [
-//      {
-//        "name": "zoom",
-//        "on": [{"events": "click", "update": "10"}]
-//      },
-//      {
-//        "name": "zoomscale",
-//        "value": 300
-//      },
-//      {
-//        "name": "longitude",
-//        "value": -74.0059
-//      },
-//      {
-//        "name": "latitude",
-//        "value": 40.7128
-//      }
-//    ],
-
-//    "projections": [
-//      {
-//        "name": "projection",
-//        "type": "mercator",
-//        "scale": {"signal": "zoomscale"},
-//        "rotate": [{"signal": "-longitude"}, 0, 0],
-//        "center": [0, {"signal": "latitude"}],
-//        "translate": [{"signal": "width/2"}, {"signal": "height/2"}]
-//      }
-//    ],
-
     "data": [
       {
         "name": "unemp",
@@ -84,12 +54,6 @@
           "feature": "countries"
         }
       },
-//      {
-//        "name": "graticule",
-//        "transform": [
-//          { "type": "graticule", "step": [15, 15] }
-//        ]
-//      }
     ],
 
     "scales": [
@@ -102,35 +66,6 @@
     ],
 
     "marks": [
-//      {
-//        "type": "shape",
-//        "from": {"data": "graticule"},
-//        "encode": {
-//          "enter": {
-//            "strokeWidth": {"value": 1},
-//            "stroke": {"value": "#ddd"},
-//            "fill": {"value": null}
-//          }
-//        },
-//        "transform": [
-//          { "type": "geoshape", "projection": "projection" }
-//        ]
-//      },
-//      {
-//        "type": "shape",
-//        "from": {"data": "world"},
-//        "encode": {
-//          "enter": {
-//            "opacity": {"value": 0.4},
-//            "strokeWidth": {"value": 0.5},
-//            "stroke": {"value": "#bbb"},
-//            "fill": {"value": "#d9e8be"}
-//          }
-//        },
-//        "transform": [
-//          { "type": "geoshape", "projection": "projection" }
-//        ]
-//      },
       {
         "type": "shape",
         "from": {"data": "counties"},
@@ -138,6 +73,7 @@
           "enter": {"opacity": {"value": 0.4}},
           "update": {
             "fill": {"scale": "color", "field": "unemp.rate"},
+            // "stroke": {"value": "#000"},
             "tooltip": {"signal": "'Unemployment ' + format(datum.unemp.rate, ',.1%')"}
           },
           "hover": { "fill": {"value": "red"} }
@@ -194,8 +130,7 @@
   }).addTo(map);
 
   L.marker([40.7128, -74.0059]).addTo(map)
-    .bindPopup('A Leaflet marker popup<br><b>(on top of Vega)</b>')
-    .openPopup();
+    .bindPopup('A Leaflet marker popup<br><b>(on top of Vega)</b>');
 
   const vega = L.vegaLayer(spec).addTo(map);
 
