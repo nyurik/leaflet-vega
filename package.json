@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
@@ -15,18 +15,45 @@
   "repository": "nyurik/leaflet-vega",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "leaflet": "^1.0.3",
+    "leaflet": "^1.1.0",
     "vega": "^3.0.0-beta.38"
   },
   "devDependencies": {
     "eslint": "^4.0.0",
     "eslint-config-mourner": "^2.0.1",
+    "rollup": "^0.41.4",
+    "rollup-watch": "^4.0.0",
+    "rollup-plugin-json": "^2.3.0",
     "uglify-js-es6": "^2.8.9"
   },
   "scripts": {
     "test": "eslint src",
-    "prepublish": "mkdir -p dist && uglifyjs node_modules/vega/build/vega.js src/VegaLayer.js -c -m -o dist/leaflet-vega.min.js",
     "lint": "eslint src/*.js test/test*.js",
-    "pretest": "npm run lint"
+    "pretest": "npm run lint",
+    "build": "rollup -c",
+    "prepublish": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "sourceType": "module"
+    },
+    "root": true,
+    "env": {
+      "commonjs": true,
+      "amd": true,
+      "node": false
+    },
+    "extends": "mourner",
+    "rules": {
+      "space-before-function-paren": 0,
+      "indent": [
+        2,
+        2,
+        {
+          "SwitchCase": 1
+        }
+      ]
+    }
   }
 }

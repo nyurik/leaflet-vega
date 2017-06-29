@@ -1,12 +1,10 @@
-'use strict';
+import {version} from '../package.json';
+import L from 'leaflet';
 
-/*global L*/
-
-L.vegaLayer = function (spec) {
-  return new L.VegaLayer(spec);
+L.vegaLayer = function (spec, options) {
+  return new L.VegaLayer(spec, options);
 };
 
-//noinspection JSUnusedGlobalSymbols
 L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   options: {
@@ -25,6 +23,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     this._spec = this._updateGraphSpec(spec);
   },
 
+  /**
+   * @param {L.Map} map
+   * @return {L.VegaLayer}
+   */
   addTo: function (map) {
     map.addLayer(this);
     return this;
@@ -46,9 +48,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       .initialize(this._vegaContainer)
       .hover();
 
-    this._view.addSignalListener('latitude', (name, value) => this._onSignalChange(name, value));
-    this._view.addSignalListener('longitude', (name, value) => this._onSignalChange(name, value));
-    this._view.addSignalListener('zoom', (name, value) => this._onSignalChange(name, value));
+    const onSignal = (sig, value) => this._onSignalChange(sig, value);
+
+    this._view
+      .addSignalListener('latitude', onSignal)
+      .addSignalListener('longitude', onSignal)
+      .addSignalListener('zoom', onSignal);
 
     this._reset(true);
 
@@ -61,12 +66,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     L.DomUtil.empty(this._vegaContainer);
   },
 
-  _onSignalChange: function (name, value) {
+  _onSignalChange: function (sig, value) {
     const map = this._map;
     let center = map.getCenter();
     let zoom = map.getZoom();
 
-    switch (name) {
+    switch (sig) {
       case 'latitude':
         center.lat = value;
         break;
@@ -148,14 +153,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     /**
      * Set spec field, and warn if overriding
      * @param {object} spec
-     * @param {string} name
+     * @param {string} key
      * @param {*} value
      */
-    function overrideField(spec, name, value) {
-      if (spec[name] && spec[name] !== value) {
-        console.log(`Overriding ${name} 𐃘 ${value}`);
+    function overrideField(spec, key, value) {
+      if (spec[key] && spec[key] !== value) {
+        console.log(`Overriding ${key} 𐃘 ${value}`);
       }
-      spec[name] = value;
+      spec[key] = value;
     }
 
     const mapSignals = ['zoom', 'latitude', 'longitude'];
@@ -189,3 +194,5 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   }
 
 });
+
+L.VegaLayer.version = version;
