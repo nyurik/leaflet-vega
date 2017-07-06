@@ -1,7 +1,7 @@
 import {version} from '../package.json';
 import L from 'leaflet';
 
-L.vegaLayer = function (spec, options) {
+L.vega = function (spec, options) {
   return new L.VegaLayer(spec, options);
 };
 
