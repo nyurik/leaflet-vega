@@ -16,6 +16,15 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     // Options to be passed ot the Vega's View constructor
     viewConfig: undefined,
+
+    // If true, graph will be repainted only after the map has finished moving (faster)
+    delayRepaint: true,
+
+    // optional warning handler:   (warning) => { ... }
+    onWarning: false,
+
+    // optional error handler:   (err) => { ...; throw err; }
+    onError: false,
   },
 
   initialize: function (spec, options) {
@@ -41,9 +50,17 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     const dataflow = vega.parse(this._spec, this.options.parseConfigp);
 
-    this._view = new vega.View(dataflow, this.options.viewConfig)
-      .logLevel(vega.Warn)
-      .renderer('canvas')
+    this._view = new vega.View(dataflow, this.options.viewConfig);
+
+    if (this.options.onWarning) {
+      this._view.warn = this._onWarn;
+    }
+
+    if (this.options.onError) {
+      this._view.error = this._onError;
+    }
+
+    this._view
       .padding({left: 0, right: 0, top: 0, bottom: 0})
       .initialize(this._vegaContainer)
       .hover();
@@ -181,14 +198,6 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     overrideField(spec, 'padding', 0);
     overrideField(spec, 'autosize', 'none');
-
-    // FIXME: this is an extension of Vega spec, might need a better way/naming
-    if (spec.delayRepaint !== undefined) {
-      this.options.delayRepaint = spec.delayRepaint;
-      delete spec.delayRepaint;
-    } else {
-      this.options.delayRepaint = true; // default
-    }
 
     return spec;
   }

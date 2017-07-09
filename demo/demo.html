@@ -28,9 +28,6 @@
     "padding": 0,
     "autosize": "none",
 
-    // Make sure the legend stays in place
-    "delayRepaint": true,
-
     "data": [
       {
         "name": "unemp",
@@ -132,7 +129,11 @@
   L.marker([40.7128, -74.0059]).addTo(map)
     .bindPopup('A Leaflet marker popup<br><b>(on top of Vega)</b>');
 
-  const vega = L.vega(spec).addTo(map);
+  const vega = L.vega(spec, {
+    // Make sure the legend stays in place
+    delayRepaint: true,
+
+  }).addTo(map);
 
 
 </script>
