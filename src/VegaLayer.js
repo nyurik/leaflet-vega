@@ -29,6 +29,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   initialize: function (spec, options) {
     L.Util.setOptions(this, options);
+    this._ignoreSignals = false;
     this._spec = this._updateGraphSpec(spec);
   },
 
@@ -89,6 +90,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   _onSignalChange: function (sig, value) {
+    if (this._ignoreSignals) {
+      return;
+    }
+
     const map = this._map;
     let center = map.getCenter();
     let zoom = map.getZoom();
@@ -132,15 +137,21 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       return 0;
     }
 
-    // Only send changed signals to Vega
-    let changed = 0;
-    changed |= sendSignal('width', size.x);
-    changed |= sendSignal('height', size.y);
-    changed |= sendSignal('latitude', center.lat);
-    changed |= sendSignal('longitude', center.lng);
-    changed |= sendSignal('zoom', zoom);
+    try {
+      this._ignoreSignals = true;
 
-    if (changed || force) view.run();
+      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+      let changed = 0;
+      changed |= sendSignal('width', size.x);
+      changed |= sendSignal('height', size.y);
+      changed |= sendSignal('latitude', center.lat);
+      changed |= sendSignal('longitude', center.lng);
+      changed |= sendSignal('zoom', zoom);
+
+      if (changed || force) view.run();
+    } finally {
+      this._ignoreSignals = false;
+    }
   },
 
   /*
