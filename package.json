@@ -12,7 +12,7 @@
     "leaflet"
   ],
   "main": "dist/bundle.js",
-  "jsnext:main": "src/VegaLayer.js",
+  "module": "src/VegaLayer.js",
   "jspm": {
     "registry": "npm",
     "format": "es6",
@@ -21,7 +21,6 @@
   "repository": "nyurik/leaflet-vega",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "leaflet": "^1.1.0",
     "vega": "^3.0.0-beta.38"
   },
   "devDependencies": {

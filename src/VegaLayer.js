@@ -29,7 +29,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   initialize: function (spec, options) {
     L.Util.setOptions(this, options);
-    this._ignoreSignals = false;
+    this._disableSignals = 0;
+    this.disableSignals = () => {
+      this._disableSignals++;
+    };
+    this.enableSignals = () => {
+      this._disableSignals--;
+      if (this._disableSignals < 0) throw new Error('too many signal enables')
+    };
     this._spec = this._updateGraphSpec(spec);
   },
 
@@ -43,40 +50,51 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   onAdd: function (map) {
-    this._map = map;
-    this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
-    map._panes.overlayPane.appendChild(this._vegaContainer);
+    return Promise.resolve().then(() => {
+      this.disableSignals();
 
-    const vega = this.options.vega;
+      this._map = map;
+      this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
+      map._panes.overlayPane.appendChild(this._vegaContainer);
 
-    const dataflow = vega.parse(this._spec, this.options.parseConfigp);
+      const vega = this.options.vega;
 
-    this._view = new vega.View(dataflow, this.options.viewConfig);
+      const dataflow = vega.parse(this._spec, this.options.parseConfigp);
 
-    if (this.options.onWarning) {
-      this._view.warn = this.options.onWarning;
-    }
+      const oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
+      this.options.viewConfig.loader.load = (uri, opt) => {
+        console.log('Load', uri, opt);
+        return oldLoad(uri, opt);
+      };
+      this._view = new vega.View(dataflow, this.options.viewConfig);
+      console.log('booom');
 
-    if (this.options.onError) {
-      this._view.error = this.options.onError;
-    }
 
-    this._view
-      .padding({left: 0, right: 0, top: 0, bottom: 0})
-      .initialize(this._vegaContainer)
-      .hover();
+      if (this.options.onWarning) {
+        this._view.warn = this.options.onWarning;
+      }
 
-    const onSignal = (sig, value) => this._onSignalChange(sig, value);
+      if (this.options.onError) {
+        this._view.error = this.options.onError;
+      }
 
-    this._view
-      .addSignalListener('latitude', onSignal)
-      .addSignalListener('longitude', onSignal)
-      .addSignalListener('zoom', onSignal);
+      this._view
+        .padding({left: 0, right: 0, top: 0, bottom: 0})
+        .initialize(this._vegaContainer)
+        .hover();
 
-    this._reset(true);
+      const onSignal = (sig, value) => this._onSignalChange(sig, value);
 
-    map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._reset());
-    map.on('zoomend', () => this._reset());
+      this._view
+        .addSignalListener('latitude', onSignal)
+        .addSignalListener('longitude', onSignal)
+        .addSignalListener('zoom', onSignal);
+
+      map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._reset());
+      map.on('zoomend', () => this._reset());
+
+      return this._reset(true);
+    }).then(this.enableSignals, (err) => { this.enableSignals(); throw err; });
   },
 
   onRemove: function () {
@@ -113,32 +131,33 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
 
     map.setView(center, zoom);
-    this._reset();
+
+    this._reset(); // ignore promise
   },
 
   _reset: function (force) {
 
-    const map = this._map;
-    const view = this._view;
+    return Promise.resolve().then(() => {
+      this.disableSignals();
 
-    const topLeft = map.containerPointToLayerPoint([0, 0]);
-    L.DomUtil.setPosition(this._vegaContainer, topLeft);
+      const map = this._map;
+      const view = this._view;
+      const topLeft = map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(this._vegaContainer, topLeft);
 
-    const size = map.getSize();
-    const center = map.getCenter();
-    const zoom = map.getZoom();
+      const size = map.getSize();
+      const center = map.getCenter();
+      const zoom = map.getZoom();
 
-    function sendSignal(sig, value) {
-      if (view.signal(sig) !== value) {
-        view.signal(sig, value);
-        return 1;
+      function sendSignal(sig, value) {
+        if (view.signal(sig) !== value) {
+          view.signal(sig, value);
+          return 1;
+        }
+
+        return 0;
       }
 
-      return 0;
-    }
-
-    try {
-      this._ignoreSignals = true;
 
       // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
       let changed = 0;
@@ -148,10 +167,11 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       changed |= sendSignal('longitude', center.lng);
       changed |= sendSignal('zoom', zoom);
 
-      if (changed || force) view.run();
-    } finally {
-      this._ignoreSignals = false;
-    }
+      if (changed || force) {
+        return view.runAsync();
+      }
+      return 0;
+    }).then(this.enableSignals, (err) => { this.enableSignals(); throw err; });
   },
 
   /*
