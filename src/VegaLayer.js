@@ -53,11 +53,11 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     this._view = new vega.View(dataflow, this.options.viewConfig);
 
     if (this.options.onWarning) {
-      this._view.warn = this._onWarn;
+      this._view.warn = this.options.onWarning;
     }
 
     if (this.options.onError) {
-      this._view.error = this._onError;
+      this._view.error = this.options.onError;
     }
 
     this._view
