@@ -80,7 +80,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   onRemove: function () {
     this._view.finalize();
-    L.DomUtil.empty(this._vegaContainer);
+
+    // TODO: once Leaflet 0.7 is fully out of the picture, replace this with L.DomUtil.empty()
+    const el = this._vegaContainer;
+    while (el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
   },
 
   _onSignalChange: function (sig, value) {

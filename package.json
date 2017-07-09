@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
@@ -21,6 +21,7 @@
   "repository": "nyurik/leaflet-vega",
   "license": "BSD-2-Clause",
   "dependencies": {
+    "leaflet": "^1.1.0",
     "vega": "^3.0.0-beta.38"
   },
   "devDependencies": {
