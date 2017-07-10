@@ -98,7 +98,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   onRemove: function () {
-    this._view.finalize();
+    if (this._view) {
+      this._view.finalize();
+      this._view = null;
+    }
 
     // TODO: once Leaflet 0.7 is fully out of the picture, replace this with L.DomUtil.empty()
     const el = this._vegaContainer;
@@ -139,6 +142,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     return Promise.resolve().then(() => {
       this.disableSignals();
+
+      if (!this._view) {
+        return 0;
+      }
 
       const map = this._map;
       const view = this._view;
