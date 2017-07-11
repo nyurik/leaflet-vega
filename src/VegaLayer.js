@@ -83,7 +83,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       this._view
         .padding({left: 0, right: 0, top: 0, bottom: 0})
-        .initialize(this._vegaContainer, this.options._bindingsContainer)
+        .initialize(this._vegaContainer, this.options.bindingsContainer)
         .hover();
 
       const onSignal = (sig, value) => this._onSignalChange(sig, value);
