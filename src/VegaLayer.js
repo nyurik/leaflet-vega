@@ -97,7 +97,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       map.on('zoomend', () => this._reset());
 
       return this._reset(true);
-    }).then(this.enableSignals, (err) => { this.enableSignals(); throw err; });
+    }).then(this.enableSignals, this.enableSignals);
   },
 
   onRemove: function () {
@@ -181,7 +181,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         return view.runAsync();
       }
       return 0;
-    }).then(this.enableSignals, (err) => { this.enableSignals(); throw err; });
+    }).then(this.enableSignals, this.enableSignals);
   },
 
   /*
