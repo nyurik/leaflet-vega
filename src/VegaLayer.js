@@ -11,6 +11,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // FIXME: uses window.vega
     vega: window && window.vega,
 
+    // If Vega spec creates controls (inputs), put them all into this container
+    bindingsContainer: undefined,
+
     // Options to be passed to the Vega's parse method
     parseConfig: undefined,
 
@@ -80,7 +83,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       this._view
         .padding({left: 0, right: 0, top: 0, bottom: 0})
-        .initialize(this._vegaContainer)
+        .initialize(this._vegaContainer, this.options._bindingsContainer)
         .hover();
 
       const onSignal = (sig, value) => this._onSignalChange(sig, value);
