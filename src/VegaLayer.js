@@ -191,12 +191,11 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   _updateGraphSpec: function (spec) {
     /**
      * Find all names that are not defined in the spec's section
-     * @param {object} spec
      * @param {string} section
      * @param {Iterable.<string>} names
      * @return {Iterable.<string>}
      */
-    function findUndefined(spec, section, names) {
+    const findUndefined = (section, names) => {
       if (!spec.hasOwnProperty(section)) {
         spec[section] = [];
         return names;
@@ -211,27 +210,31 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         if (obj.name) names.delete(obj.name);
       }
       return names;
-    }
+    };
 
     /**
      * Set spec field, and warn if overriding
-     * @param {object} spec
      * @param {string} key
      * @param {*} value
      */
-    function overrideField(spec, key, value) {
+    const overrideField = (key, value) => {
       if (spec[key] && spec[key] !== value) {
-        console.log(`Overriding ${key} 𐃘 ${value}`);
+        const msg = `Overriding ${key} 𐃘 ${value}`;
+        if (this.options.onWarning) {
+          this.options.onWarning(msg);
+        } else {
+          console.log(msg);
+        }
       }
       spec[key] = value;
-    }
+    };
 
     const mapSignals = ['zoom', 'latitude', 'longitude'];
-    for (let sig of findUndefined(spec, 'signals', mapSignals)) {
+    for (let sig of findUndefined('signals', mapSignals)) {
       spec.signals.push({name: sig});
     }
 
-    for (let prj of findUndefined(spec, 'projections', ['projection'])) {
+    for (let prj of findUndefined('projections', ['projection'])) {
       spec.projections.push({
         name: prj,
         type: 'mercator',
@@ -242,8 +245,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       });
     }
 
-    overrideField(spec, 'padding', 0);
-    overrideField(spec, 'autosize', 'none');
+    overrideField('padding', 0);
+    overrideField('autosize', 'none');
 
     return spec;
   }
