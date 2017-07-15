@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.4.0-alpha.1",
+  "version": "0.4.0-alpha.2",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
@@ -12,19 +12,26 @@
     "leaflet"
   ],
   "main": "dist/bundle.js",
-  "jsnext:main": "src/VegaLayer.js",
   "module": "src/VegaLayer.js",
+  "jspm": {
+    "registry": "npm",
+    "format": "es6",
+    "main": "src/VegaLayer.js"
+  },
   "repository": "nyurik/leaflet-vega",
   "license": "BSD-2-Clause",
   "dependencies": {
     "vega": "^3.0.0-beta.38"
   },
   "devDependencies": {
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-es2015": "^6.24.1",
     "eslint": "^4.0.0",
     "eslint-config-mourner": "^2.0.1",
     "rollup": "^0.41.4",
-    "rollup-watch": "^4.0.0",
-    "rollup-plugin-json": "^2.3.0"
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-json": "^2.3.0",
+    "rollup-watch": "^4.0.0"
   },
   "scripts": {
     "test": "eslint src",
@@ -32,7 +39,7 @@
     "pretest": "npm run lint",
     "precommit": "npm run lint",
     "build": "rollup -c rollup.config.js",
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "dev": "rollup -c rollup.config.js -w"
   },
   "eslintConfig": {

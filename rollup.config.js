@@ -1,5 +1,6 @@
 import json from 'rollup-plugin-json';
 // import nodeResolve from 'rollup-plugin-node-resolve';
+import babel from 'rollup-plugin-babel';
 
 const pkg = require('./package.json');
 
@@ -21,7 +22,10 @@ export default {
     //   browser: false,
     //   extensions: ['.js', '.json']
     // }),
-    json()
+    json(),
+    babel({
+      exclude: 'node_modules/**'
+    })
   ],
   globals: {
     leaflet: 'L',
