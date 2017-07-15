@@ -38,7 +38,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     };
     this.enableSignals = () => {
       this._disableSignals--;
-      if (this._disableSignals < 0) throw new Error('too many signal enables')
+      if (this._disableSignals < 0) {
+        throw new Error('too many signal enables');
+      }
     };
     this._spec = this._updateGraphSpec(spec);
   },
