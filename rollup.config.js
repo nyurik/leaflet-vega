@@ -1,5 +1,5 @@
 import json from 'rollup-plugin-json';
-// import nodeResolve from 'rollup-plugin-node-resolve';
+import nodeResolve from 'rollup-plugin-node-resolve';
 import babel from 'rollup-plugin-babel';
 
 const pkg = require('./package.json');
@@ -10,18 +10,15 @@ const copyright = `/* ${pkg.name} - v${pkg.version} - ${new Date().toString()}
 
 
 export default {
-  entry: 'src/VegaLayer.js',
-  moduleName: 'L.vega',
-  format: 'umd',
+  input: 'src/VegaLayer.js',
+  name: 'L.vega',
   external: ['leaflet'],
-  dest: 'dist/bundle.js',
+  output: {
+    file: 'dist/bundle.js',
+    format: 'umd'
+  },
   plugins: [
-    // nodeResolve({
-    //   jsnext: true,
-    //   main: false,
-    //   browser: false,
-    //   extensions: ['.js', '.json']
-    // }),
+    nodeResolve(),
     json(),
     babel({
       exclude: 'node_modules/**'
@@ -31,7 +28,7 @@ export default {
     leaflet: 'L',
     'leaflet-vega': 'L.vega'
   },
-  sourceMap: true,
+  sourcemap: true,
   banner: copyright,
   legacy: true // Needed to create files loadable by IE8
 };

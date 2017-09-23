@@ -1,0 +1,496 @@
+/* leaflet-vega - v0.4.0 - Sat Sep 23 2017 17:18:43 GMT-0400 (EDT)
+ * Copyright (c) 2017 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
+ * BSD-2-Clause */
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
+	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
+	(factory(global.L));
+}(this, (function (L) { 'use strict';
+
+L = L && L.hasOwnProperty('default') ? L['default'] : L;
+
+var version = "0.4.0";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var _class = function () {
+  function _class(onWarning) {
+    _classCallCheck(this, _class);
+
+    this.onWarning = onWarning || (console ? console.log : function () {});
+  }
+
+  /**
+   * Add values like signals to a vega spec, or ignore if the they are already defined.
+   * @param {object} spec vega spec to modify and return
+   * @param {string} field name of the vega spec branch, e.g. `signals`
+   * @param {<object|string>[]} values to add
+   * @return {object} returns the same spec object as passed in
+   */
+
+
+  _class.prototype.addToList = function addToList(spec, field, values) {
+    var newSigs = new Map(values.map(function (v) {
+      return typeof v === "string" ? [v, { name: v }] : [v.name, v];
+    }));
+
+    for (var _iterator = this.findUndefined(spec, field, newSigs.keys()), _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+      var _ref;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref = _i.value;
+      }
+
+      var sig = _ref;
+
+      spec[field].push(newSigs.get(sig));
+    }
+
+    return spec;
+  };
+
+  /**
+   * Set a spec field, and warn if overriding an existing value in that field
+   * @param {object} spec vega spec to modify and return
+   * @param {string} field
+   * @param {*} value
+   * @return {object} returns the same spec object as passed in
+   */
+
+
+  _class.prototype.overrideField = function overrideField(spec, field, value) {
+    if (spec[field] && spec[field] !== value) {
+      this.onWarning("Overriding " + field + ": " + spec[field] + " \uD800\uDCD8 " + value);
+    }
+    spec[field] = value;
+    return spec;
+  };
+
+  /**
+   * Find all names that are not defined in the spec's section. Creates section if missing.
+   * @param {object} spec
+   * @param {string} section
+   * @param {Iterable.<string>} names
+   * @return {Iterable.<string>}
+   */
+
+
+  _class.prototype.findUndefined = function findUndefined(spec, section, names) {
+    if (!spec.hasOwnProperty(section)) {
+      spec[section] = [];
+      return names;
+    } else if (!Array.isArray(spec[section])) {
+      throw new Error("spec." + section + " must be an array");
+    }
+
+    var nameStrings = new Set(names);
+    for (var _iterator2 = spec[section], _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _iterator2[Symbol.iterator]();;) {
+      var _ref2;
+
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref2 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref2 = _i2.value;
+      }
+
+      var obj = _ref2;
+
+      // If obj has a name field, delete that name from the names
+      // Set will silently ignore delete() for undefined names
+      if (obj.name) nameStrings.delete(obj.name);
+    }
+
+    return nameStrings;
+  };
+
+  return _class;
+}();
+
+var asyncGenerator = function () {
+  function AwaitValue(value) {
+    this.value = value;
+  }
+
+  function AsyncGenerator(gen) {
+    var front, back;
+
+    function send(key, arg) {
+      return new Promise(function (resolve, reject) {
+        var request = {
+          key: key,
+          arg: arg,
+          resolve: resolve,
+          reject: reject,
+          next: null
+        };
+
+        if (back) {
+          back = back.next = request;
+        } else {
+          front = back = request;
+          resume(key, arg);
+        }
+      });
+    }
+
+    function resume(key, arg) {
+      try {
+        var result = gen[key](arg);
+        var value = result.value;
+
+        if (value instanceof AwaitValue) {
+          Promise.resolve(value.value).then(function (arg) {
+            resume("next", arg);
+          }, function (arg) {
+            resume("throw", arg);
+          });
+        } else {
+          settle(result.done ? "return" : "normal", result.value);
+        }
+      } catch (err) {
+        settle("throw", err);
+      }
+    }
+
+    function settle(type, value) {
+      switch (type) {
+        case "return":
+          front.resolve({
+            value: value,
+            done: true
+          });
+          break;
+
+        case "throw":
+          front.reject(value);
+          break;
+
+        default:
+          front.resolve({
+            value: value,
+            done: false
+          });
+          break;
+      }
+
+      front = front.next;
+
+      if (front) {
+        resume(front.key, front.arg);
+      } else {
+        back = null;
+      }
+    }
+
+    this._invoke = send;
+
+    if (typeof gen.return !== "function") {
+      this.return = undefined;
+    }
+  }
+
+  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+      return this;
+    };
+  }
+
+  AsyncGenerator.prototype.next = function (arg) {
+    return this._invoke("next", arg);
+  };
+
+  AsyncGenerator.prototype.throw = function (arg) {
+    return this._invoke("throw", arg);
+  };
+
+  AsyncGenerator.prototype.return = function (arg) {
+    return this._invoke("return", arg);
+  };
+
+  return {
+    wrap: function (fn) {
+      return function () {
+        return new AsyncGenerator(fn.apply(this, arguments));
+      };
+    },
+    await: function (value) {
+      return new AwaitValue(value);
+    }
+  };
+}();
+
+
+
+var asyncToGenerator = function (fn) {
+  return function () {
+    var gen = fn.apply(this, arguments);
+    return new Promise(function (resolve, reject) {
+      function step(key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        if (info.done) {
+          resolve(value);
+        } else {
+          return Promise.resolve(value).then(function (value) {
+            step("next", value);
+          }, function (err) {
+            step("throw", err);
+          });
+        }
+      }
+
+      return step("next");
+    });
+  };
+};
+
+L.vega = function (spec, options) {
+  return new L.VegaLayer(spec, options);
+};
+
+L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
+
+  options: {
+    // FIXME: uses window.vega
+    vega: window && window.vega,
+
+    // If Vega spec creates controls (inputs), put them all into this container
+    bindingsContainer: undefined,
+
+    // Options to be passed to the Vega`s parse method
+    parseConfig: undefined,
+
+    // Options to be passed ot the Vega`s View constructor
+    viewConfig: undefined,
+
+    // If true, graph will be repainted only after the map has finished moving (faster)
+    delayRepaint: true,
+
+    // optional warning handler:   (warning) => { ... }
+    onWarning: false,
+
+    // optional error handler:   (err) => { ...; throw err; }
+    onError: false
+  },
+
+  initialize: function initialize(spec, options) {
+    L.Util.setOptions(this, options);
+
+    var counter = 0;
+    this.disableSignals = function () {
+      counter++;
+    };
+    this.enableSignals = function () {
+      counter--;
+      if (counter < 0) {
+        throw new Error('too many signal enables');
+      }
+    };
+    this._vsi = new _class(options.onWarning);
+    this._spec = this._updateGraphSpec(spec);
+  },
+
+  /**
+   * @param {L.Map} map
+   * @return {L.VegaLayer}
+   */
+  addTo: function addTo(map) {
+    map.addLayer(this);
+    return this;
+  },
+
+  onAdd: function () {
+    var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(map) {
+      var _this = this;
+
+      var vega, dataflow, oldLoad, onSignal;
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              this.disableSignals();
+
+              _context.prev = 1;
+
+              this._map = map;
+              this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
+              map._panes.overlayPane.appendChild(this._vegaContainer);
+
+              vega = this.options.vega;
+              dataflow = vega.parse(this._spec, this.options.parseConfigp);
+              oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
+
+              this.options.viewConfig.loader.load = function (uri, opt) {
+                return oldLoad(uri, opt);
+              };
+              this._view = new vega.View(dataflow, this.options.viewConfig);
+
+              if (this.options.onWarning) {
+                this._view.warn = this.options.onWarning;
+              }
+
+              if (this.options.onError) {
+                this._view.error = this.options.onError;
+              }
+
+              this._view.padding({ left: 0, right: 0, top: 0, bottom: 0 }).initialize(this._vegaContainer, this.options.bindingsContainer).hover();
+
+              onSignal = function onSignal(sig, value) {
+                return _this._onSignalChange(sig, value);
+              };
+
+              this._view.addSignalListener('latitude', onSignal).addSignalListener('longitude', onSignal).addSignalListener('zoom', onSignal);
+
+              map.on(this.options.delayRepaint ? 'moveend' : 'move', function () {
+                return _this._reset();
+              });
+              map.on('zoomend', function () {
+                return _this._reset();
+              });
+
+              return _context.abrupt('return', this._reset(true));
+
+            case 18:
+              _context.prev = 18;
+
+              this.enableSignals();
+              return _context.finish(18);
+
+            case 21:
+            case 'end':
+              return _context.stop();
+          }
+        }
+      }, _callee, this, [[1,, 18, 21]]);
+    }));
+
+    function onAdd(_x) {
+      return _ref.apply(this, arguments);
+    }
+
+    return onAdd;
+  }(),
+
+  onRemove: function onRemove() {
+    if (this._view) {
+      this._view.finalize();
+      this._view = null;
+    }
+
+    // TODO: once Leaflet 0.7 is fully out of the picture, replace this with L.DomUtil.empty()
+    var el = this._vegaContainer;
+    while (el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
+  },
+
+  _onSignalChange: function _onSignalChange(sig, value) {
+    if (this._ignoreSignals) {
+      return;
+    }
+
+    var map = this._map;
+    var center = map.getCenter();
+    var zoom = map.getZoom();
+
+    switch (sig) {
+      case 'latitude':
+        center.lat = value;
+        break;
+      case 'longitude':
+        center.lng = value;
+        break;
+      case 'zoom':
+        zoom = value;
+        break;
+      default:
+        return; // ignore
+    }
+
+    map.setView(center, zoom);
+
+    this._reset(); // ignore promise
+  },
+
+  _reset: function _reset(force) {
+    var _this2 = this;
+
+    return Promise.resolve().then(function () {
+      _this2.disableSignals();
+
+      if (!_this2._view) {
+        return 0;
+      }
+
+      var map = _this2._map;
+      var view = _this2._view;
+      var topLeft = map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(_this2._vegaContainer, topLeft);
+
+      var size = map.getSize();
+      var center = map.getCenter();
+      var zoom = map.getZoom();
+
+      function sendSignal(sig, value) {
+        if (view.signal(sig) !== value) {
+          view.signal(sig, value);
+          return 1;
+        }
+
+        return 0;
+      }
+
+      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+      var changed = 0;
+      changed |= sendSignal('width', size.x);
+      changed |= sendSignal('height', size.y);
+      changed |= sendSignal('latitude', center.lat);
+      changed |= sendSignal('longitude', center.lng);
+      changed |= sendSignal('zoom', zoom);
+
+      if (changed || force) {
+        return view.runAsync();
+      }
+      return 0;
+    }).then(this.enableSignals, this.enableSignals);
+  },
+
+  /**
+   Inject signals into the spec
+   */
+  _updateGraphSpec: function _updateGraphSpec(spec) {
+    this._vsi.overrideField(spec, 'padding', 0);
+    this._vsi.overrideField(spec, 'autosize', 'none');
+    this._vsi.addToList(spec, 'signals', ['zoom', 'latitude', 'longitude']);
+    this._vsi.addToList(spec, 'projections', [{
+      name: 'projection',
+      type: 'mercator',
+      scale: { signal: '256*pow(2,zoom)/2/PI' },
+      rotate: [{ signal: '-longitude' }, 0, 0],
+      center: [0, { signal: 'latitude' }],
+      translate: [{ signal: 'width/2' }, { signal: 'height/2' }]
+    }]);
+
+    return spec;
+  }
+
+});
+
+L.VegaLayer.version = version;
+
+})));
+//# sourceMappingURL=bundle.js.map

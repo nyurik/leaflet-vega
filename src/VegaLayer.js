@@ -1,4 +1,5 @@
 import {version} from '../package.json';
+import Vsi from 'vega-spec-injector';
 import L from 'leaflet';
 
 L.vega = function (spec, options) {
@@ -14,10 +15,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // If Vega spec creates controls (inputs), put them all into this container
     bindingsContainer: undefined,
 
-    // Options to be passed to the Vega's parse method
+    // Options to be passed to the Vega`s parse method
     parseConfig: undefined,
 
-    // Options to be passed ot the Vega's View constructor
+    // Options to be passed ot the Vega`s View constructor
     viewConfig: undefined,
 
     // If true, graph will be repainted only after the map has finished moving (faster)
@@ -32,16 +33,18 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   initialize: function (spec, options) {
     L.Util.setOptions(this, options);
-    this._disableSignals = 0;
+
+    let counter = 0;
     this.disableSignals = () => {
-      this._disableSignals++;
+      counter++;
     };
     this.enableSignals = () => {
-      this._disableSignals--;
-      if (this._disableSignals < 0) {
-        throw new Error('too many signal enables');
+      counter--;
+      if (counter < 0) {
+        throw new Error(`too many signal enables`);
       }
     };
+    this._vsi = new Vsi(options.onWarning);
     this._spec = this._updateGraphSpec(spec);
   },
 
@@ -54,12 +57,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     return this;
   },
 
-  onAdd: function (map) {
-    return Promise.resolve().then(() => {
-      this.disableSignals();
+  onAdd: async function (map) {
+    this.disableSignals();
 
+    try {
       this._map = map;
-      this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
+      this._vegaContainer = L.DomUtil.create(`div`, `leaflet-vega-container`);
       map._panes.overlayPane.appendChild(this._vegaContainer);
 
       const vega = this.options.vega;
@@ -68,12 +71,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       const oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
       this.options.viewConfig.loader.load = (uri, opt) => {
-        console.log('Load', uri, opt);
         return oldLoad(uri, opt);
       };
       this._view = new vega.View(dataflow, this.options.viewConfig);
-      console.log('booom');
-
 
       if (this.options.onWarning) {
         this._view.warn = this.options.onWarning;
@@ -91,15 +91,17 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       const onSignal = (sig, value) => this._onSignalChange(sig, value);
 
       this._view
-        .addSignalListener('latitude', onSignal)
-        .addSignalListener('longitude', onSignal)
-        .addSignalListener('zoom', onSignal);
+        .addSignalListener(`latitude`, onSignal)
+        .addSignalListener(`longitude`, onSignal)
+        .addSignalListener(`zoom`, onSignal);
 
-      map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._reset());
-      map.on('zoomend', () => this._reset());
+      map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._reset());
+      map.on(`zoomend`, () => this._reset());
 
       return this._reset(true);
-    }).then(this.enableSignals, this.enableSignals);
+    } finally {
+      this.enableSignals();
+    }
   },
 
   onRemove: function () {
@@ -125,13 +127,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     let zoom = map.getZoom();
 
     switch (sig) {
-      case 'latitude':
+      case `latitude`:
         center.lat = value;
         break;
-      case 'longitude':
+      case `longitude`:
         center.lng = value;
         break;
-      case 'zoom':
+      case `zoom`:
         zoom = value;
         break;
       default:
@@ -173,11 +175,11 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
       let changed = 0;
-      changed |= sendSignal('width', size.x);
-      changed |= sendSignal('height', size.y);
-      changed |= sendSignal('latitude', center.lat);
-      changed |= sendSignal('longitude', center.lng);
-      changed |= sendSignal('zoom', zoom);
+      changed |= sendSignal(`width`, size.x);
+      changed |= sendSignal(`height`, size.y);
+      changed |= sendSignal(`latitude`, center.lat);
+      changed |= sendSignal(`longitude`, center.lng);
+      changed |= sendSignal(`zoom`, zoom);
 
       if (changed || force) {
         return view.runAsync();
@@ -186,69 +188,21 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }).then(this.enableSignals, this.enableSignals);
   },
 
-  /*
+  /**
    Inject signals into the spec
-   TODO: make it less hacky - avoid spec modification
    */
   _updateGraphSpec: function (spec) {
-    /**
-     * Find all names that are not defined in the spec's section
-     * @param {string} section
-     * @param {Iterable.<string>} names
-     * @return {Iterable.<string>}
-     */
-    const findUndefined = (section, names) => {
-      if (!spec.hasOwnProperty(section)) {
-        spec[section] = [];
-        return names;
-      } else if (!Array.isArray(spec[section])) {
-        throw new Error('signals must be an array');
-      }
-
-      names = new Set(names);
-      for (let obj of spec[section]) {
-        // If obj has a name field, delete that name from the names
-        // Set will silently ignore delete() for undefined names
-        if (obj.name) names.delete(obj.name);
-      }
-      return names;
-    };
-
-    /**
-     * Set spec field, and warn if overriding
-     * @param {string} key
-     * @param {*} value
-     */
-    const overrideField = (key, value) => {
-      if (spec[key] && spec[key] !== value) {
-        const msg = `Overriding ${key} 𐃘 ${value}`;
-        if (this.options.onWarning) {
-          this.options.onWarning(msg);
-        } else {
-          console.log(msg);
-        }
-      }
-      spec[key] = value;
-    };
-
-    const mapSignals = ['zoom', 'latitude', 'longitude'];
-    for (let sig of findUndefined('signals', mapSignals)) {
-      spec.signals.push({name: sig});
-    }
-
-    for (let prj of findUndefined('projections', ['projection'])) {
-      spec.projections.push({
-        name: prj,
-        type: 'mercator',
-        scale: {signal: '256*pow(2,zoom)/2/PI'},
-        rotate: [{signal: '-longitude'}, 0, 0],
-        center: [0, {signal: 'latitude'}],
-        translate: [{signal: 'width/2'}, {signal: 'height/2'}]
-      });
-    }
-
-    overrideField('padding', 0);
-    overrideField('autosize', 'none');
+    this._vsi.overrideField(spec, `padding`, 0);
+    this._vsi.overrideField(spec, `autosize`, `none`);
+    this._vsi.addToList(spec, `signals`, [`zoom`, `latitude`, `longitude`]);
+    this._vsi.addToList(spec, `projections`, [{
+      name: `projection`,
+      type: `mercator`,
+      scale: {signal: `256*pow(2,zoom)/2/PI`},
+      rotate: [{signal: `-longitude`}, 0, 0],
+      center: [0, {signal: `latitude`}],
+      translate: [{signal: `width/2`}, {signal: `height/2`}]
+    }]);
 
     return spec;
   }
