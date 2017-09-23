@@ -34,14 +34,15 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   initialize: function (spec, options) {
     L.Util.setOptions(this, options);
 
-    let counter = 0;
+    this._ignoreSignals = 0;
     this.disableSignals = () => {
-      counter++;
+      this._ignoreSignals++;
     };
     this.enableSignals = () => {
-      counter--;
-      if (counter < 0) {
-        throw new Error(`too many signal enables`);
+      this._ignoreSignals--;
+      if (this._ignoreSignals < 0) {
+        this._ignoreSignals = 0;
+        throw new Error(`Too many calls to enableSignals()`);
       }
     };
     this._vsi = new Vsi(options.onWarning);

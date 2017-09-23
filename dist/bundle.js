@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.5.0 - Sat Sep 23 2017 18:54:30 GMT-0400 (EDT)
+/* leaflet-vega - v0.5.1 - Sat Sep 23 2017 19:25:33 GMT-0400 (EDT)
  * Copyright (c) 2017 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.5.0";
+var version = "0.5.1";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -288,16 +288,19 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   initialize: function initialize(spec, options) {
+    var _this = this;
+
     L.Util.setOptions(this, options);
 
-    var counter = 0;
+    this._ignoreSignals = 0;
     this.disableSignals = function () {
-      counter++;
+      _this._ignoreSignals++;
     };
     this.enableSignals = function () {
-      counter--;
-      if (counter < 0) {
-        throw new Error('too many signal enables');
+      _this._ignoreSignals--;
+      if (_this._ignoreSignals < 0) {
+        _this._ignoreSignals = 0;
+        throw new Error('Too many calls to enableSignals()');
       }
     };
     this._vsi = new _class(options.onWarning);
@@ -320,7 +323,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   _onAddAsync: function () {
     var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(map) {
-      var _this = this;
+      var _this2 = this;
 
       var vega, dataflow, oldLoad, onSignal;
       return regeneratorRuntime.wrap(function _callee$(_context) {
@@ -355,16 +358,16 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               this._view.padding({ left: 0, right: 0, top: 0, bottom: 0 }).initialize(this._vegaContainer, this.options.bindingsContainer).hover();
 
               onSignal = function onSignal(sig, value) {
-                return _this._onSignalChange(sig, value);
+                return _this2._onSignalChange(sig, value);
               };
 
               this._view.addSignalListener('latitude', onSignal).addSignalListener('longitude', onSignal).addSignalListener('zoom', onSignal);
 
               map.on(this.options.delayRepaint ? 'moveend' : 'move', function () {
-                return _this._resetAsync();
+                return _this2._resetAsync();
               });
               map.on('zoomend', function () {
-                return _this._resetAsync();
+                return _this2._resetAsync();
               });
 
               _context.next = 19;
