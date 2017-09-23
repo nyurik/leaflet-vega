@@ -73,7 +73,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       const vega = this.options.vega;
 
-      const dataflow = vega.parse(this._spec, this.options.parseConfigp);
+      const dataflow = vega.parse(this._spec, this.options.parseConfig);
 
       const oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
       this.options.viewConfig.loader.load = (uri, opt) => {
