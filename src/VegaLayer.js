@@ -57,7 +57,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     return this;
   },
 
-  onAdd: async function (map) {
+  onAdd: function (map) {
+    this._onAddAsync(map);
+    return this;
+  },
+
+  _onAddAsync: async function (map) {
     this.disableSignals();
 
     try {
@@ -95,10 +100,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         .addSignalListener(`longitude`, onSignal)
         .addSignalListener(`zoom`, onSignal);
 
-      map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._reset());
-      map.on(`zoomend`, () => this._reset());
+      map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._resetAsync());
+      map.on(`zoomend`, () => this._resetAsync());
 
-      return this._reset(true);
+      await this._resetAsync(true);
+    } catch (err) {
+      if (this.options.onError) {
+        this.options.onError(err);
+      }
     } finally {
       this.enableSignals();
     }
@@ -142,18 +151,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     map.setView(center, zoom);
 
-    this._reset(); // ignore promise
+    this._resetAsync(); // ignore promise
   },
 
-  _reset: function (force) {
+  _resetAsync: async function (force) {
+    if (!this._view) return;
 
-    return Promise.resolve().then(() => {
-      this.disableSignals();
-
-      if (!this._view) {
-        return 0;
-      }
-
+    this.disableSignals();
+    try {
       const map = this._map;
       const view = this._view;
       const topLeft = map.containerPointToLayerPoint([0, 0]);
@@ -163,17 +168,15 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       const center = map.getCenter();
       const zoom = map.getZoom();
 
-      function sendSignal(sig, value) {
+      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+      const sendSignal = (sig, value) => {
         if (view.signal(sig) !== value) {
           view.signal(sig, value);
           return 1;
         }
-
         return 0;
-      }
+      };
 
-
-      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
       let changed = 0;
       changed |= sendSignal(`width`, size.x);
       changed |= sendSignal(`height`, size.y);
@@ -182,10 +185,15 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       changed |= sendSignal(`zoom`, zoom);
 
       if (changed || force) {
-        return view.runAsync();
+        await view.runAsync();
       }
-      return 0;
-    }).then(this.enableSignals, this.enableSignals);
+    } catch (err) {
+      if (this.options.onError) {
+        this.options.onError(err);
+      }
+    } finally {
+      this.enableSignals();
+    }
   },
 
   /**

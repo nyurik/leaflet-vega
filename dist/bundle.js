@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.4.0 - Sat Sep 23 2017 17:18:43 GMT-0400 (EDT)
+/* leaflet-vega - v0.5.0 - Sat Sep 23 2017 18:54:30 GMT-0400 (EDT)
  * Copyright (c) 2017 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.4.0";
+var version = "0.5.0";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -313,7 +313,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     return this;
   },
 
-  onAdd: function () {
+  onAdd: function onAdd(map) {
+    this._onAddAsync(map);
+    return this;
+  },
+
+  _onAddAsync: function () {
     var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(map) {
       var _this = this;
 
@@ -356,33 +361,46 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               this._view.addSignalListener('latitude', onSignal).addSignalListener('longitude', onSignal).addSignalListener('zoom', onSignal);
 
               map.on(this.options.delayRepaint ? 'moveend' : 'move', function () {
-                return _this._reset();
+                return _this._resetAsync();
               });
               map.on('zoomend', function () {
-                return _this._reset();
+                return _this._resetAsync();
               });
 
-              return _context.abrupt('return', this._reset(true));
+              _context.next = 19;
+              return this._resetAsync(true);
 
-            case 18:
-              _context.prev = 18;
-
-              this.enableSignals();
-              return _context.finish(18);
+            case 19:
+              _context.next = 24;
+              break;
 
             case 21:
+              _context.prev = 21;
+              _context.t0 = _context['catch'](1);
+
+              if (this.options.onError) {
+                this.options.onError(_context.t0);
+              }
+
+            case 24:
+              _context.prev = 24;
+
+              this.enableSignals();
+              return _context.finish(24);
+
+            case 27:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, this, [[1,, 18, 21]]);
+      }, _callee, this, [[1, 21, 24, 27]]);
     }));
 
-    function onAdd(_x) {
+    function _onAddAsync(_x) {
       return _ref.apply(this, arguments);
     }
 
-    return onAdd;
+    return _onAddAsync;
   }(),
 
   onRemove: function onRemove() {
@@ -423,51 +441,95 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     map.setView(center, zoom);
 
-    this._reset(); // ignore promise
+    this._resetAsync(); // ignore promise
   },
 
-  _reset: function _reset(force) {
-    var _this2 = this;
+  _resetAsync: function () {
+    var _ref2 = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(force) {
+      var map, view, topLeft, size, center, zoom, sendSignal, changed;
+      return regeneratorRuntime.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              if (this._view) {
+                _context2.next = 2;
+                break;
+              }
 
-    return Promise.resolve().then(function () {
-      _this2.disableSignals();
+              return _context2.abrupt('return');
 
-      if (!_this2._view) {
-        return 0;
-      }
+            case 2:
 
-      var map = _this2._map;
-      var view = _this2._view;
-      var topLeft = map.containerPointToLayerPoint([0, 0]);
-      L.DomUtil.setPosition(_this2._vegaContainer, topLeft);
+              this.disableSignals();
+              _context2.prev = 3;
+              map = this._map;
+              view = this._view;
+              topLeft = map.containerPointToLayerPoint([0, 0]);
 
-      var size = map.getSize();
-      var center = map.getCenter();
-      var zoom = map.getZoom();
+              L.DomUtil.setPosition(this._vegaContainer, topLeft);
 
-      function sendSignal(sig, value) {
-        if (view.signal(sig) !== value) {
-          view.signal(sig, value);
-          return 1;
+              size = map.getSize();
+              center = map.getCenter();
+              zoom = map.getZoom();
+
+              // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+
+              sendSignal = function sendSignal(sig, value) {
+                if (view.signal(sig) !== value) {
+                  view.signal(sig, value);
+                  return 1;
+                }
+                return 0;
+              };
+
+              changed = 0;
+
+              changed |= sendSignal('width', size.x);
+              changed |= sendSignal('height', size.y);
+              changed |= sendSignal('latitude', center.lat);
+              changed |= sendSignal('longitude', center.lng);
+              changed |= sendSignal('zoom', zoom);
+
+              if (!(changed || force)) {
+                _context2.next = 21;
+                break;
+              }
+
+              _context2.next = 21;
+              return view.runAsync();
+
+            case 21:
+              _context2.next = 26;
+              break;
+
+            case 23:
+              _context2.prev = 23;
+              _context2.t0 = _context2['catch'](3);
+
+              if (this.options.onError) {
+                this.options.onError(_context2.t0);
+              }
+
+            case 26:
+              _context2.prev = 26;
+
+              this.enableSignals();
+              return _context2.finish(26);
+
+            case 29:
+            case 'end':
+              return _context2.stop();
+          }
         }
+      }, _callee2, this, [[3, 23, 26, 29]]);
+    }));
 
-        return 0;
-      }
+    function _resetAsync(_x2) {
+      return _ref2.apply(this, arguments);
+    }
 
-      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
-      var changed = 0;
-      changed |= sendSignal('width', size.x);
-      changed |= sendSignal('height', size.y);
-      changed |= sendSignal('latitude', center.lat);
-      changed |= sendSignal('longitude', center.lng);
-      changed |= sendSignal('zoom', zoom);
-
-      if (changed || force) {
-        return view.runAsync();
-      }
-      return 0;
-    }).then(this.enableSignals, this.enableSignals);
-  },
+    return _resetAsync;
+  }(),
 
   /**
    Inject signals into the spec
