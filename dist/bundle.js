@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.5.1 - Sat Sep 23 2017 19:25:33 GMT-0400 (EDT)
+/* leaflet-vega - v0.5.4 - Mon Dec 11 2017 23:10:37 GMT-0500 (EST)
  * Copyright (c) 2017 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.5.1";
+var version = "0.5.4";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -325,7 +325,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(map) {
       var _this2 = this;
 
-      var vega, dataflow, oldLoad, onSignal;
+      var vega, dataflow, viewConfig, oldLoad, onSignal;
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -339,13 +339,17 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               map._panes.overlayPane.appendChild(this._vegaContainer);
 
               vega = this.options.vega;
-              dataflow = vega.parse(this._spec, this.options.parseConfigp);
-              oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
+              dataflow = vega.parse(this._spec, this.options.parseConfig);
+              viewConfig = this.options.viewConfig;
 
-              this.options.viewConfig.loader.load = function (uri, opt) {
-                return oldLoad(uri, opt);
-              };
-              this._view = new vega.View(dataflow, this.options.viewConfig);
+              if (viewConfig.loader) {
+                oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
+
+                viewConfig.loader.load = function (uri, opt) {
+                  return oldLoad(uri, opt);
+                };
+              }
+              this._view = new vega.View(dataflow, viewConfig);
 
               if (this.options.onWarning) {
                 this._view.warn = this.options.onWarning;

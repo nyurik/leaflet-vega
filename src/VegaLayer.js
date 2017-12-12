@@ -75,11 +75,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       const dataflow = vega.parse(this._spec, this.options.parseConfig);
 
-      const oldLoad = this.options.viewConfig.loader.load.bind(this.options.viewConfig.loader);
-      this.options.viewConfig.loader.load = (uri, opt) => {
-        return oldLoad(uri, opt);
-      };
-      this._view = new vega.View(dataflow, this.options.viewConfig);
+      const viewConfig = this.options.viewConfig;
+      if (viewConfig.loader) {
+        const oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
+        viewConfig.loader.load = (uri, opt) => {
+          return oldLoad(uri, opt);
+        };
+      }
+      this._view = new vega.View(dataflow, viewConfig);
 
       if (this.options.onWarning) {
         this._view.warn = this.options.onWarning;
