@@ -11,11 +11,17 @@ const copyright = `/* ${pkg.name} - v${pkg.version} - ${new Date().toString()}
 
 export default {
   input: 'src/VegaLayer.js',
-  name: 'L.vega',
   external: ['leaflet'],
   output: {
+    name: 'L.vega',
     file: 'dist/bundle.js',
-    format: 'umd'
+    format: 'umd',
+    sourcemap: true,
+    banner: copyright,
+    globals: {
+      leaflet: 'L',
+      'leaflet-vega': 'L.vega'
+    },
   },
   plugins: [
     nodeResolve(),
@@ -24,11 +30,5 @@ export default {
       exclude: 'node_modules/**'
     })
   ],
-  globals: {
-    leaflet: 'L',
-    'leaflet-vega': 'L.vega'
-  },
-  sourcemap: true,
-  banner: copyright,
   legacy: true // Needed to create files loadable by IE8
 };

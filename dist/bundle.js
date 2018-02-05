@@ -1,5 +1,5 @@
-/* leaflet-vega - v0.5.4 - Mon Dec 11 2017 23:10:37 GMT-0500 (EST)
- * Copyright (c) 2017 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
+/* leaflet-vega - v0.6.0 - Sun Feb 04 2018 20:38:01 GMT-0500 (EST)
+ * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.5.4";
+var version = "0.6.0";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -114,121 +114,6 @@ var _class = function () {
   return _class;
 }();
 
-var asyncGenerator = function () {
-  function AwaitValue(value) {
-    this.value = value;
-  }
-
-  function AsyncGenerator(gen) {
-    var front, back;
-
-    function send(key, arg) {
-      return new Promise(function (resolve, reject) {
-        var request = {
-          key: key,
-          arg: arg,
-          resolve: resolve,
-          reject: reject,
-          next: null
-        };
-
-        if (back) {
-          back = back.next = request;
-        } else {
-          front = back = request;
-          resume(key, arg);
-        }
-      });
-    }
-
-    function resume(key, arg) {
-      try {
-        var result = gen[key](arg);
-        var value = result.value;
-
-        if (value instanceof AwaitValue) {
-          Promise.resolve(value.value).then(function (arg) {
-            resume("next", arg);
-          }, function (arg) {
-            resume("throw", arg);
-          });
-        } else {
-          settle(result.done ? "return" : "normal", result.value);
-        }
-      } catch (err) {
-        settle("throw", err);
-      }
-    }
-
-    function settle(type, value) {
-      switch (type) {
-        case "return":
-          front.resolve({
-            value: value,
-            done: true
-          });
-          break;
-
-        case "throw":
-          front.reject(value);
-          break;
-
-        default:
-          front.resolve({
-            value: value,
-            done: false
-          });
-          break;
-      }
-
-      front = front.next;
-
-      if (front) {
-        resume(front.key, front.arg);
-      } else {
-        back = null;
-      }
-    }
-
-    this._invoke = send;
-
-    if (typeof gen.return !== "function") {
-      this.return = undefined;
-    }
-  }
-
-  if (typeof Symbol === "function" && Symbol.asyncIterator) {
-    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
-      return this;
-    };
-  }
-
-  AsyncGenerator.prototype.next = function (arg) {
-    return this._invoke("next", arg);
-  };
-
-  AsyncGenerator.prototype.throw = function (arg) {
-    return this._invoke("throw", arg);
-  };
-
-  AsyncGenerator.prototype.return = function (arg) {
-    return this._invoke("return", arg);
-  };
-
-  return {
-    wrap: function (fn) {
-      return function () {
-        return new AsyncGenerator(fn.apply(this, arguments));
-      };
-    },
-    await: function (value) {
-      return new AwaitValue(value);
-    }
-  };
-}();
-
-
-
 var asyncToGenerator = function (fn) {
   return function () {
     var gen = fn.apply(this, arguments);
@@ -303,8 +188,16 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         throw new Error('Too many calls to enableSignals()');
       }
     };
-    this._vsi = new _class(options.onWarning);
-    this._spec = this._updateGraphSpec(spec);
+
+    // Inject signals into the spec
+    var vsi = new _class(options.onWarning);
+
+    vsi.overrideField(spec, 'padding', 0);
+    vsi.overrideField(spec, 'autosize', 'none');
+    vsi.addToList(spec, 'signals', ['zoom', 'latitude', 'longitude']);
+    vsi.addToList(spec, 'projections', [this.defaultProjection]);
+
+    this._spec = spec;
   },
 
   /**
@@ -342,7 +235,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               dataflow = vega.parse(this._spec, this.options.parseConfig);
               viewConfig = this.options.viewConfig;
 
-              if (viewConfig.loader) {
+              if (viewConfig && viewConfig.loader) {
                 oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
 
                 viewConfig.loader.load = function (uri, opt) {
@@ -538,23 +431,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     return _resetAsync;
   }(),
 
-  /**
-   Inject signals into the spec
-   */
-  _updateGraphSpec: function _updateGraphSpec(spec) {
-    this._vsi.overrideField(spec, 'padding', 0);
-    this._vsi.overrideField(spec, 'autosize', 'none');
-    this._vsi.addToList(spec, 'signals', ['zoom', 'latitude', 'longitude']);
-    this._vsi.addToList(spec, 'projections', [{
-      name: 'projection',
-      type: 'mercator',
-      scale: { signal: '256*pow(2,zoom)/2/PI' },
-      rotate: [{ signal: '-longitude' }, 0, 0],
-      center: [0, { signal: 'latitude' }],
-      translate: [{ signal: 'width/2' }, { signal: 'height/2' }]
-    }]);
-
-    return spec;
+  defaultProjection: {
+    name: 'projection',
+    type: 'mercator',
+    scale: { signal: '256*pow(2,zoom)/2/PI' },
+    rotate: [{ signal: '-longitude' }, 0, 0],
+    center: [0, { signal: 'latitude' }],
+    translate: [{ signal: 'width/2' }, { signal: 'height/2' }]
   }
 
 });

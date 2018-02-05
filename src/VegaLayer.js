@@ -45,8 +45,16 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         throw new Error(`Too many calls to enableSignals()`);
       }
     };
-    this._vsi = new Vsi(options.onWarning);
-    this._spec = this._updateGraphSpec(spec);
+
+    // Inject signals into the spec
+    const vsi = new Vsi(options.onWarning);
+
+    vsi.overrideField(spec, `padding`, 0);
+    vsi.overrideField(spec, `autosize`, `none`);
+    vsi.addToList(spec, `signals`, [`zoom`, `latitude`, `longitude`]);
+    vsi.addToList(spec, `projections`, [this.defaultProjection]);
+
+    this._spec = spec;
   },
 
   /**
@@ -76,7 +84,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       const dataflow = vega.parse(this._spec, this.options.parseConfig);
 
       const viewConfig = this.options.viewConfig;
-      if (viewConfig.loader) {
+      if (viewConfig && viewConfig.loader) {
         const oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
         viewConfig.loader.load = (uri, opt) => {
           return oldLoad(uri, opt);
@@ -200,24 +208,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
   },
 
-  /**
-   Inject signals into the spec
-   */
-  _updateGraphSpec: function (spec) {
-    this._vsi.overrideField(spec, `padding`, 0);
-    this._vsi.overrideField(spec, `autosize`, `none`);
-    this._vsi.addToList(spec, `signals`, [`zoom`, `latitude`, `longitude`]);
-    this._vsi.addToList(spec, `projections`, [{
-      name: `projection`,
-      type: `mercator`,
-      scale: {signal: `256*pow(2,zoom)/2/PI`},
-      rotate: [{signal: `-longitude`}, 0, 0],
-      center: [0, {signal: `latitude`}],
-      translate: [{signal: `width/2`}, {signal: `height/2`}]
-    }]);
-
-    return spec;
-  }
+  defaultProjection: {
+    name: `projection`,
+    type: `mercator`,
+    scale: {signal: `256*pow(2,zoom)/2/PI`},
+    rotate: [{signal: `-longitude`}, 0, 0],
+    center: [0, {signal: `latitude`}],
+    translate: [{signal: `width/2`}, {signal: `height/2`}]
+  },
 
 });
 
