@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.6.0 - Sun Feb 04 2018 20:38:01 GMT-0500 (EST)
+/* leaflet-vega - v0.6.1 - Mon Feb 05 2018 19:01:33 GMT-0500 (EST)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.6.0";
+var version = "0.6.1";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -437,7 +437,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     scale: { signal: '256*pow(2,zoom)/2/PI' },
     rotate: [{ signal: '-longitude' }, 0, 0],
     center: [0, { signal: 'latitude' }],
-    translate: [{ signal: 'width/2' }, { signal: 'height/2' }]
+    translate: [{ signal: 'width/2' }, { signal: 'height/2' }],
+    fit: false
   }
 
 });

@@ -214,7 +214,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     scale: {signal: `256*pow(2,zoom)/2/PI`},
     rotate: [{signal: `-longitude`}, 0, 0],
     center: [0, {signal: `latitude`}],
-    translate: [{signal: `width/2`}, {signal: `height/2`}]
+    translate: [{signal: `width/2`}, {signal: `height/2`}],
+    fit: false,
   },
 
 });

@@ -54,7 +54,7 @@ All Vega specs are pre-populated with the following template. Your Vega graph ma
     {"name": "longitude"}
   ],
 
-  // For convenience, a preset projection is provided
+  // For convenience, this preset projection is injected if not defined by the user.
   "projections": [
     {
       "name": "projection",
@@ -64,7 +64,8 @@ All Vega specs are pre-populated with the following template. Your Vega graph ma
       "scale": {"signal": "256*pow(2,zoom)/2/PI"},
       "rotate": [{"signal": "-longitude"}, 0, 0],
       "center": [0, {"signal": "latitude"}],
-      "translate": [{"signal": "width/2"}, {"signal": "height/2"}]
+      "translate": [{"signal": "width/2"}, {"signal": "height/2"}],
+      "fit": false
     }
   ]
 }
