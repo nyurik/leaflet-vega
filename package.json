@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",

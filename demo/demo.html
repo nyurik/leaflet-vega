@@ -103,24 +103,17 @@
 
     "signals": [
       {
-        "name": "region_click",
+        "name": "on_region_click",
         "on": [{
           "events": "@region:click[!event.ctrlKey]",
-          "update": "setMapView(invert('projection',geoCentroid('projection',datum)))"
+          "update": "setMapView(geoCentroid(null,datum))"
         }]
       },
       {
-        "name": "zoom_click",
+        "name": "on_region_ctrlclick",
         "on": [{
           "events": "@region:click[event.ctrlKey]",
-          "update": "geoBounds('projection', datum)"
-        }]
-      },
-      {
-        "name": "calc_map_region",
-        "on": [{
-          "events": { "signal": "zoom_click" },
-          "update": "setMapView([invert('projection',zoom_click[0]), invert('projection',zoom_click[1])])"
+          "update": "setMapView(geoBounds(null, datum))"
         }]
       }
     ],
@@ -181,6 +174,7 @@
   layer.addTo(map);
 
   window.VEGA_DEBUG = {
+    spec,
     view: layer._view
   };
 
