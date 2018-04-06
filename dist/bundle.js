@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.8.1 - Fri Apr 06 2018 07:02:32 GMT+0300 (MSK)
+/* leaflet-vega - v0.8.3 - Fri Apr 06 2018 19:00:22 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -112,7 +112,7 @@ var _class = function () {
   return _class;
 }();
 
-var version = "0.8.1";
+var version = "0.8.3";
 
 var asyncToGenerator = function (fn) {
   return function () {
@@ -376,7 +376,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                 }
 
                 function throwError() {
-                  throw new Error('Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
+                  throw new Error('Unexpected setMapView() parameters. It could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
                 }
 
                 function checkArray(val) {
@@ -563,30 +563,25 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                 return 0;
               };
 
-              changed = 0;
-              /* eslint-disable no-bitwise */
+              // update if any of the signal's values have changed
 
-              changed |= sendSignal('width', size.x);
-              changed |= sendSignal('height', size.y);
-              changed |= sendSignal('latitude', center.lat);
-              changed |= sendSignal('longitude', center.lng);
-              changed |= sendSignal('zoom', zoom);
-              /* eslint-enable */
 
-              if (!(changed || force)) {
-                _context2.next = 21;
+              changed = sendSignal('width', size.x) + sendSignal('height', size.y) + sendSignal('latitude', center.lat) + sendSignal('longitude', center.lng) + sendSignal('zoom', zoom);
+
+              if (!(changed > 0 || force)) {
+                _context2.next = 16;
                 break;
               }
 
-              _context2.next = 21;
+              _context2.next = 16;
               return view.runAsync();
 
-            case 21:
-              _context2.next = 26;
+            case 16:
+              _context2.next = 21;
               break;
 
-            case 23:
-              _context2.prev = 23;
+            case 18:
+              _context2.prev = 18;
               _context2.t0 = _context2['catch'](3);
 
               if (_this3.options.onError) {
@@ -597,18 +592,18 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                 console.error(_context2.t0);
               }
 
-            case 26:
-              _context2.prev = 26;
+            case 21:
+              _context2.prev = 21;
 
               _this3.enableSignals();
-              return _context2.finish(26);
+              return _context2.finish(21);
 
-            case 29:
+            case 24:
             case 'end':
               return _context2.stop();
           }
         }
-      }, _callee2, _this3, [[3, 23, 26, 29]]);
+      }, _callee2, _this3, [[3, 18, 21, 24]]);
     }))();
   },
 

@@ -145,7 +145,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
        */
       this._view.Leaflet_setMapViewHandler = (...args) => {
         function throwError() {
-          throw new Error('Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
+          throw new Error('Unexpected setMapView() parameters. It could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
         }
 
         function checkArray(val) {
@@ -278,16 +278,15 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         return 0;
       };
 
-      let changed = 0;
-      /* eslint-disable no-bitwise */
-      changed |= sendSignal('width', size.x);
-      changed |= sendSignal('height', size.y);
-      changed |= sendSignal('latitude', center.lat);
-      changed |= sendSignal('longitude', center.lng);
-      changed |= sendSignal('zoom', zoom);
-      /* eslint-enable */
+      // update if any of the signal's values have changed
+      const changed =
+        sendSignal('width', size.x) +
+        sendSignal('height', size.y) +
+        sendSignal('latitude', center.lat) +
+        sendSignal('longitude', center.lng) +
+        sendSignal('zoom', zoom);
 
-      if (changed || force) {
+      if (changed > 0 || force) {
         await view.runAsync();
       }
     } catch (err) {
