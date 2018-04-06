@@ -34,8 +34,6 @@
 
   const spec = {
     "$schema": "https://vega.github.io/schema/vega/v3.0.json",
-    "padding": 0,
-    "autosize": "none",
 
     "data": [
       {
@@ -93,14 +91,27 @@
 
     "signals": [
       {
-        "name": "clickedRegion",
+        "name": "region_click",
         "on": [{
-          "events": "@region:click",
-          "update": "setMapView(invert('projection',geoCentroid('projection', datum)))"
+          "events": "@region:click[!event.ctrlKey]",
+          "update": "setMapView(invert('projection',geoCentroid('projection',datum)))"
+        }]
+      },
+      {
+        "name": "zoom_click",
+        "on": [{
+          "events": "@region:click[event.ctrlKey]",
+          "update": "geoBounds('projection', datum)"
+        }]
+      },
+      {
+        "name": "calc_map_region",
+        "on": [{
+          "events": { "signal": "zoom_click" },
+          "update": "setMapView([invert('projection',zoom_click[0]), invert('projection',zoom_click[1])])"
         }]
       }
     ],
-
     "legends": [
       {
         "fill": "color",

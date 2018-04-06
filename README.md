@@ -42,10 +42,11 @@ Your Vega spec may read `latitude`, `longitude`, and `zoom` signals, as well as 
 
 The `setMapView()` can be used in any of these forms:
 ```yaml
-setMapView(latitude, longitude);
-setMapView(latitude, longitude, zoom);
-setMapView([longitude, latitude]); // one array argument
-setMapView([longitude, latitude], zoom); // one array and one number
+setMapView(latitude, longitude);         // center
+setMapView(latitude, longitude, zoom);   // center and zoom
+setMapView([longitude, latitude]);       // center with single array arg
+setMapView([longitude, latitude], zoom); // center and zoom
+setMapView([[lng1, lat1],[lng2, lat2]]); // bounding box center and zoom
 ```
 
 All Vega specs are pre-populated with the following template. Your Vega graph may use any of the signals and the projection directly without declaring them, just like you use `width` or `height` signals.

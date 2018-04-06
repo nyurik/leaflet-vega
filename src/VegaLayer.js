@@ -41,50 +41,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     const vega = this.options.vega;
     if (!vega.expressionFunction('setMapView')) {
       vega.expressionFunction('setMapView',
-        /**
-         * Given longitude/latitude/zoom, position the map to those coordinates
-         * The function can be called in one of the following ways:
-         *  setMapView(latitude, longitude)
-         *  setMapView(latitude, longitude, zoom)
-         *  setMapView([longitude, latitude])
-         *  setMapView([longitude, latitude], zoom)
-         */
         function () {
           const handler = this.context.dataflow.Leaflet_setMapViewHandler;
           if (!handler) throw new Error('setMapView() is not defined for this graph');
-          let longitude, latitude, zoom;
-
-          function checkArray(val, ind) {
-            if (!val || !Array.isArray(val) || val.length !== 2 ||
-              typeof val[0] !== 'number' || typeof val[1] !== 'number'
-            ) {
-              throw new Error(`setMapView's ${ind} parameter must be a 2 value array [longitude, latitude], or it can be used as setMapView(latitude, longitude, optional_zoom)`);
-            }
-            return val;
-          }
-
-          switch (arguments.length) {
-            default:
-              throw new Error('Unexpected number of setMapView parameters');
-            case 1:
-              [longitude, latitude] = checkArray(arguments[0], '1st');
-              break;
-            case 2:
-              if (Array.isArray(arguments[0])) {
-                [longitude, latitude] = checkArray(arguments[0], '1st');
-                zoom = arguments[1];
-              } else {
-                [latitude, longitude] = arguments;
-              }
-              break;
-            case 3:
-              [latitude, longitude, zoom] = arguments;
-              break;
-          }
-          handler(latitude, longitude, zoom);
+          return handler(...arguments);
         });
     }
-
     this._ignoreSignals = 0;
     this.disableSignals = () => {
       this._ignoreSignals++;
@@ -143,10 +105,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       }
       this._view = new vega.View(dataflow, viewConfig);
 
+      if (!viewConfig || viewConfig.logLevel === undefined) {
+        this._view.logLevel(vega.Warn);
+      }
       if (this.options.onWarning) {
         this._view.warn = this.options.onWarning;
       }
-
       if (this.options.onError) {
         this._view.error = this.options.onError;
       }
@@ -166,14 +130,73 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._resetAsync());
       map.on(`zoomend`, () => this._resetAsync());
 
-      this._view.Leaflet_setMapViewHandler = (lat, lng, zoom) => {
-        if (zoom === undefined) {
-          zoom = map.getZoom();
-        }
-        map.setView({lat, lng}, zoom);
-        this._resetAsync(); // ignore promise
-      };
+      /**
+       * Given longitude/latitude/zoom or bounding box, position the map to those coordinates
+       * The function can be called in one of the following ways:
+       *  setMapView(latitude, longitude)
+       *  setMapView(latitude, longitude, zoom)
+       *  setMapView([longitude, latitude])
+       *  setMapView([longitude, latitude], zoom)
+       *  setMapView([[lng1,lat1],[lng2,lat2]])
+       */
+      this._view.Leaflet_setMapViewHandler = (...args) => {
 
+        function throwError() {
+          throw new Error(`Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)`);
+        }
+
+        function checkArray(val) {
+          if (!Array.isArray(val) || val.length !== 2 ||
+            typeof val[0] !== 'number' || typeof val[1] !== 'number'
+          ) {
+            throwError();
+          }
+          return val;
+        }
+
+        let lng, lat, zoom;
+        switch (args.length) {
+          default:
+            throwError();
+            break;
+          case 1: {
+            const arg = args[0];
+            if (Array.isArray(arg) && arg.length === 2 && Array.isArray(arg[0]) && Array.isArray(arg[1])) {
+              // called with a bounding box, need to reverse order
+              let [lng1, lat1] = checkArray(arg[0]);
+              let [lng2, lat2] = checkArray(arg[1]);
+              map.fitBounds(L.latLngBounds(L.latLng(lat1, lng1), L.latLng(lat2, lng2)));
+            } else {
+              // called with a center point and no zoom
+              [lng, lat] = checkArray(arg);
+            }
+            break;
+          }
+          case 2:
+            if (Array.isArray(args[0])) {
+              [lng, lat] = checkArray(args[0]);
+              zoom = args[1];
+            } else {
+              [lat, lng] = args;
+            }
+            break;
+          case 3:
+            [lat, lng, zoom] = args;
+            break;
+        }
+
+        if (lat !== undefined && lng !== undefined) {
+          if (typeof lat !== 'number' || typeof lng !== 'number') {
+            throwError();
+          }
+          if (zoom === undefined) {
+            zoom = map.getZoom();
+          } else if (typeof zoom !== 'number') {
+            throwError();
+          }
+          map.setView({ lat, lng }, zoom);
+        }
+      };
       await this._resetAsync(true);
     } catch (err) {
       if (this.options.onError) {
@@ -221,8 +244,6 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
 
     map.setView(center, zoom);
-
-    this._resetAsync(); // ignore promise
   },
 
   _resetAsync: async function (force) {
@@ -261,6 +282,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     } catch (err) {
       if (this.options.onError) {
         this.options.onError(err);
+      } else if (console && console.error) {
+        console.error(err);
       }
     } finally {
       this.enableSignals();

@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.7.0 - Fri Apr 06 2018 04:38:10 GMT+0300 (MSK)
+/* leaflet-vega - v0.8.0 - Fri Apr 06 2018 06:31:25 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.7.0";
+var version = "0.8.0";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -251,71 +251,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // when the View instance was created by us
     var vega = this.options.vega;
     if (!vega.expressionFunction('setMapView')) {
-      vega.expressionFunction('setMapView',
-      /**
-       * Given longitude/latitude/zoom, position the map to those coordinates
-       * The function can be called in one of the following ways:
-       *  setMapView(latitude, longitude)
-       *  setMapView(latitude, longitude, zoom)
-       *  setMapView([longitude, latitude])
-       *  setMapView([longitude, latitude], zoom)
-       */
-      function () {
+      vega.expressionFunction('setMapView', function () {
         var handler = this.context.dataflow.Leaflet_setMapViewHandler;
         if (!handler) throw new Error('setMapView() is not defined for this graph');
-        var longitude = void 0,
-            latitude = void 0,
-            zoom = void 0;
-
-        function checkArray(val, ind) {
-          if (!val || !Array.isArray(val) || val.length !== 2 || typeof val[0] !== 'number' || typeof val[1] !== 'number') {
-            throw new Error('setMapView\'s ' + ind + ' parameter must be a 2 value array [longitude, latitude], or it can be used as setMapView(latitude, longitude, optional_zoom)');
-          }
-          return val;
-        }
-
-        switch (arguments.length) {
-          default:
-            throw new Error('Unexpected number of setMapView parameters');
-          case 1:
-            var _checkArray = checkArray(arguments[0], '1st');
-
-            var _checkArray2 = slicedToArray(_checkArray, 2);
-
-            longitude = _checkArray2[0];
-            latitude = _checkArray2[1];
-
-            break;
-          case 2:
-            if (Array.isArray(arguments[0])) {
-              var _checkArray3 = checkArray(arguments[0], '1st');
-
-              var _checkArray4 = slicedToArray(_checkArray3, 2);
-
-              longitude = _checkArray4[0];
-              latitude = _checkArray4[1];
-
-              zoom = arguments[1];
-            } else {
-              var _arguments = Array.prototype.slice.call(arguments);
-
-              latitude = _arguments[0];
-              longitude = _arguments[1];
-            }
-            break;
-          case 3:
-            var _arguments2 = Array.prototype.slice.call(arguments);
-
-            latitude = _arguments2[0];
-            longitude = _arguments2[1];
-            zoom = _arguments2[2];
-
-            break;
-        }
-        handler(latitude, longitude, zoom);
+        return handler.apply(undefined, arguments);
       });
     }
-
     this._ignoreSignals = 0;
     this.disableSignals = function () {
       _this._ignoreSignals++;
@@ -383,10 +324,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               }
               this._view = new vega.View(dataflow, viewConfig);
 
+              if (!viewConfig || viewConfig.logLevel === undefined) {
+                this._view.logLevel(vega.Warn);
+              }
               if (this.options.onWarning) {
                 this._view.warn = this.options.onWarning;
               }
-
               if (this.options.onError) {
                 this._view.error = this.options.onError;
               }
@@ -406,41 +349,128 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                 return _this2._resetAsync();
               });
 
-              this._view.Leaflet_setMapViewHandler = function (lat, lng, zoom) {
-                if (zoom === undefined) {
-                  zoom = map.getZoom();
+              /**
+               * Given longitude/latitude/zoom or bounding box, position the map to those coordinates
+               * The function can be called in one of the following ways:
+               *  setMapView(latitude, longitude)
+               *  setMapView(latitude, longitude, zoom)
+               *  setMapView([longitude, latitude])
+               *  setMapView([longitude, latitude], zoom)
+               *  setMapView([[lng1,lat1],[lng2,lat2]])
+               */
+              this._view.Leaflet_setMapViewHandler = function () {
+                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                  args[_key] = arguments[_key];
                 }
-                map.setView({ lat: lat, lng: lng }, zoom);
-                _this2._resetAsync(); // ignore promise
-              };
 
-              _context.next = 20;
+                function throwError() {
+                  throw new Error('Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
+                }
+
+                function checkArray(val) {
+                  if (!Array.isArray(val) || val.length !== 2 || typeof val[0] !== 'number' || typeof val[1] !== 'number') {
+                    throwError();
+                  }
+                  return val;
+                }
+
+                var lng = void 0,
+                    lat = void 0,
+                    zoom = void 0;
+                switch (args.length) {
+                  default:
+                    throwError();
+                    break;
+                  case 1:
+                    {
+                      var arg = args[0];
+                      if (Array.isArray(arg) && arg.length === 2 && Array.isArray(arg[0]) && Array.isArray(arg[1])) {
+                        // called with a bounding box, need to reverse order
+                        var _checkArray = checkArray(arg[0]),
+                            _checkArray2 = slicedToArray(_checkArray, 2),
+                            lng1 = _checkArray2[0],
+                            lat1 = _checkArray2[1];
+
+                        var _checkArray3 = checkArray(arg[1]),
+                            _checkArray4 = slicedToArray(_checkArray3, 2),
+                            lng2 = _checkArray4[0],
+                            lat2 = _checkArray4[1];
+
+                        map.fitBounds(L.latLngBounds(L.latLng(lat1, lng1), L.latLng(lat2, lng2)));
+                      } else {
+                        var _checkArray5 = checkArray(arg);
+                        // called with a center point and no zoom
+
+
+                        var _checkArray6 = slicedToArray(_checkArray5, 2);
+
+                        lng = _checkArray6[0];
+                        lat = _checkArray6[1];
+                      }
+                      break;
+                    }
+                  case 2:
+                    if (Array.isArray(args[0])) {
+                      var _checkArray7 = checkArray(args[0]);
+
+                      var _checkArray8 = slicedToArray(_checkArray7, 2);
+
+                      lng = _checkArray8[0];
+                      lat = _checkArray8[1];
+
+                      zoom = args[1];
+                    } else {
+                      lat = args[0];
+                      lng = args[1];
+                    }
+                    break;
+                  case 3:
+                    lat = args[0];
+                    lng = args[1];
+                    zoom = args[2];
+
+                    break;
+                }
+
+                if (lat !== undefined && lng !== undefined) {
+                  if (typeof lat !== 'number' || typeof lng !== 'number') {
+                    throwError();
+                  }
+                  if (zoom === undefined) {
+                    zoom = map.getZoom();
+                  } else if (typeof zoom !== 'number') {
+                    throwError();
+                  }
+                  map.setView({ lat: lat, lng: lng }, zoom);
+                }
+              };
+              _context.next = 21;
               return this._resetAsync(true);
 
-            case 20:
-              _context.next = 25;
+            case 21:
+              _context.next = 26;
               break;
 
-            case 22:
-              _context.prev = 22;
+            case 23:
+              _context.prev = 23;
               _context.t0 = _context['catch'](1);
 
               if (this.options.onError) {
                 this.options.onError(_context.t0);
               }
 
-            case 25:
-              _context.prev = 25;
+            case 26:
+              _context.prev = 26;
 
               this.enableSignals();
-              return _context.finish(25);
+              return _context.finish(26);
 
-            case 28:
+            case 29:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, this, [[1, 22, 25, 28]]);
+      }, _callee, this, [[1, 23, 26, 29]]);
     }));
 
     function _onAddAsync(_x) {
@@ -487,8 +517,6 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
 
     map.setView(center, zoom);
-
-    this._resetAsync(); // ignore promise
   },
 
   _resetAsync: function () {
@@ -555,6 +583,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
               if (this.options.onError) {
                 this.options.onError(_context2.t0);
+              } else if (console && console.error) {
+                console.error(_context2.t0);
               }
 
             case 26:
