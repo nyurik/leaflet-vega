@@ -36,7 +36,7 @@ Your Vega spec may read `latitude`, `longitude`, and `zoom` signals, as well as 
 ```yaml
 "on": [{
   "events": "@region:click",
-  "update": "setMapView(invert('projection',geoCentroid('projection', datum)))"
+  "update": "setMapView(geoCentroid(null, datum))"
 }]
 ```
 
