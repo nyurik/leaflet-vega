@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.8.0 - Fri Apr 06 2018 06:31:25 GMT+0300 (MSK)
+/* leaflet-vega - v0.8.1 - Fri Apr 06 2018 07:02:32 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -8,8 +8,6 @@
 }(this, (function (L) { 'use strict';
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
-
-var version = "0.8.0";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -114,6 +112,8 @@ var _class = function () {
   return _class;
 }();
 
+var version = "0.8.1";
+
 var asyncToGenerator = function (fn) {
   return function () {
     var gen = fn.apply(this, arguments);
@@ -211,7 +211,8 @@ var slicedToArray = function () {
   };
 }();
 
-L.vega = function (spec, options) {
+// eslint-disable-next-line import/extensions,import/no-unresolved
+L.vega = function vega(spec, options) {
   return new L.VegaLayer(spec, options);
 };
 
@@ -219,6 +220,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   options: {
     // FIXME: uses window.vega
+    // eslint-disable-next-line no-undef
     vega: window && window.vega,
 
     // If Vega spec creates controls (inputs), put them all into this container
@@ -250,11 +252,19 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // and make sure calls to setMapView() only happen
     // when the View instance was created by us
     var vega = this.options.vega;
+
     if (!vega.expressionFunction('setMapView')) {
-      vega.expressionFunction('setMapView', function () {
-        var handler = this.context.dataflow.Leaflet_setMapViewHandler;
+      vega.expressionFunction('setMapView', function setMapView() {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        var view = this.context.dataflow;
+        var handler = view.Leaflet_setMapViewHandler;
         if (!handler) throw new Error('setMapView() is not defined for this graph');
-        return handler.apply(undefined, arguments);
+        view.runAfter(function () {
+          return handler.apply(undefined, args);
+        });
       });
     }
     this._ignoreSignals = 0;
@@ -280,6 +290,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     this._spec = spec;
   },
 
+
   /**
    * @param {L.Map} map
    * @return {L.VegaLayer}
@@ -288,32 +299,31 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     map.addLayer(this);
     return this;
   },
-
   onAdd: function onAdd(map) {
     this._onAddAsync(map);
     return this;
   },
+  _onAddAsync: function _onAddAsync(map) {
+    var _this2 = this;
 
-  _onAddAsync: function () {
-    var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(map) {
-      var _this2 = this;
+    return asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+      var _options, vega, viewConfig, dataflow, oldLoad, onSignal;
 
-      var vega, dataflow, viewConfig, oldLoad, onSignal;
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              this.disableSignals();
+              _this2.disableSignals();
 
               _context.prev = 1;
 
-              this._map = map;
-              this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
-              map._panes.overlayPane.appendChild(this._vegaContainer);
+              _this2._map = map;
+              _this2._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
+              map._panes.overlayPane.appendChild(_this2._vegaContainer);
 
-              vega = this.options.vega;
-              dataflow = vega.parse(this._spec, this.options.parseConfig);
-              viewConfig = this.options.viewConfig;
+              _options = _this2.options, vega = _options.vega, viewConfig = _options.viewConfig;
+              dataflow = vega.parse(_this2._spec, _this2.options.parseConfig);
+
 
               if (viewConfig && viewConfig.loader) {
                 oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
@@ -322,27 +332,29 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                   return oldLoad(uri, opt);
                 };
               }
-              this._view = new vega.View(dataflow, viewConfig);
+              _this2._view = new vega.View(dataflow, viewConfig);
 
               if (!viewConfig || viewConfig.logLevel === undefined) {
-                this._view.logLevel(vega.Warn);
+                _this2._view.logLevel(vega.Warn);
               }
-              if (this.options.onWarning) {
-                this._view.warn = this.options.onWarning;
+              if (_this2.options.onWarning) {
+                _this2._view.warn = _this2.options.onWarning;
               }
-              if (this.options.onError) {
-                this._view.error = this.options.onError;
+              if (_this2.options.onError) {
+                _this2._view.error = _this2.options.onError;
               }
 
-              this._view.padding({ left: 0, right: 0, top: 0, bottom: 0 }).initialize(this._vegaContainer, this.options.bindingsContainer).hover();
+              _this2._view.padding({
+                left: 0, right: 0, top: 0, bottom: 0
+              }).initialize(_this2._vegaContainer, _this2.options.bindingsContainer).hover();
 
               onSignal = function onSignal(sig, value) {
                 return _this2._onSignalChange(sig, value);
               };
 
-              this._view.addSignalListener('latitude', onSignal).addSignalListener('longitude', onSignal).addSignalListener('zoom', onSignal);
+              _this2._view.addSignalListener('latitude', onSignal).addSignalListener('longitude', onSignal).addSignalListener('zoom', onSignal);
 
-              map.on(this.options.delayRepaint ? 'moveend' : 'move', function () {
+              map.on(_this2.options.delayRepaint ? 'moveend' : 'move', function () {
                 return _this2._resetAsync();
               });
               map.on('zoomend', function () {
@@ -358,9 +370,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                *  setMapView([longitude, latitude], zoom)
                *  setMapView([[lng1,lat1],[lng2,lat2]])
                */
-              this._view.Leaflet_setMapViewHandler = function () {
-                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                  args[_key] = arguments[_key];
+              _this2._view.Leaflet_setMapViewHandler = function () {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                  args[_key2] = arguments[_key2];
                 }
 
                 function throwError() {
@@ -374,9 +386,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                   return val;
                 }
 
-                var lng = void 0,
-                    lat = void 0,
-                    zoom = void 0;
+                var lng = void 0;
+                var lat = void 0;
+                var zoom = void 0;
                 switch (args.length) {
                   default:
                     throwError();
@@ -411,13 +423,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                     }
                   case 2:
                     if (Array.isArray(args[0])) {
+                      // eslint-disable-next-line prefer-destructuring
                       var _checkArray7 = checkArray(args[0]);
 
                       var _checkArray8 = slicedToArray(_checkArray7, 2);
 
                       lng = _checkArray8[0];
                       lat = _checkArray8[1];
-
                       zoom = args[1];
                     } else {
                       lat = args[0];
@@ -444,42 +456,35 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                   map.setView({ lat: lat, lng: lng }, zoom);
                 }
               };
-              _context.next = 21;
-              return this._resetAsync(true);
+              _context.next = 20;
+              return _this2._resetAsync(true);
 
-            case 21:
-              _context.next = 26;
+            case 20:
+              _context.next = 25;
               break;
 
-            case 23:
-              _context.prev = 23;
+            case 22:
+              _context.prev = 22;
               _context.t0 = _context['catch'](1);
 
-              if (this.options.onError) {
-                this.options.onError(_context.t0);
+              if (_this2.options.onError) {
+                _this2.options.onError(_context.t0);
               }
 
-            case 26:
-              _context.prev = 26;
+            case 25:
+              _context.prev = 25;
 
-              this.enableSignals();
-              return _context.finish(26);
+              _this2.enableSignals();
+              return _context.finish(25);
 
-            case 29:
+            case 28:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, this, [[1, 23, 26, 29]]);
-    }));
-
-    function _onAddAsync(_x) {
-      return _ref.apply(this, arguments);
-    }
-
-    return _onAddAsync;
-  }(),
-
+      }, _callee, _this2, [[1, 22, 25, 28]]);
+    }))();
+  },
   onRemove: function onRemove() {
     if (this._view) {
       this._view.finalize();
@@ -492,7 +497,6 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       el.removeChild(el.firstChild);
     }
   },
-
   _onSignalChange: function _onSignalChange(sig, value) {
     if (this._ignoreSignals) {
       return;
@@ -518,15 +522,16 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     map.setView(center, zoom);
   },
+  _resetAsync: function _resetAsync(force) {
+    var _this3 = this;
 
-  _resetAsync: function () {
-    var _ref2 = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(force) {
+    return asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
       var map, view, topLeft, size, center, zoom, sendSignal, changed;
       return regeneratorRuntime.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              if (this._view) {
+              if (_this3._view) {
                 _context2.next = 2;
                 break;
               }
@@ -535,19 +540,20 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
             case 2:
 
-              this.disableSignals();
+              _this3.disableSignals();
               _context2.prev = 3;
-              map = this._map;
-              view = this._view;
+              map = _this3._map;
+              view = _this3._view;
               topLeft = map.containerPointToLayerPoint([0, 0]);
 
-              L.DomUtil.setPosition(this._vegaContainer, topLeft);
+              L.DomUtil.setPosition(_this3._vegaContainer, topLeft);
 
               size = map.getSize();
               center = map.getCenter();
               zoom = map.getZoom();
 
-              // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+              // Only send changed signals to Vega.
+              // Detect if any of the signals have changed before calling run()
 
               sendSignal = function sendSignal(sig, value) {
                 if (view.signal(sig) !== value) {
@@ -558,12 +564,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               };
 
               changed = 0;
+              /* eslint-disable no-bitwise */
 
               changed |= sendSignal('width', size.x);
               changed |= sendSignal('height', size.y);
               changed |= sendSignal('latitude', center.lat);
               changed |= sendSignal('longitude', center.lng);
               changed |= sendSignal('zoom', zoom);
+              /* eslint-enable */
 
               if (!(changed || force)) {
                 _context2.next = 21;
@@ -581,16 +589,18 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               _context2.prev = 23;
               _context2.t0 = _context2['catch'](3);
 
-              if (this.options.onError) {
-                this.options.onError(_context2.t0);
+              if (_this3.options.onError) {
+                _this3.options.onError(_context2.t0);
+                // eslint-disable-next-line no-console
               } else if (console && console.error) {
+                // eslint-disable-next-line no-console
                 console.error(_context2.t0);
               }
 
             case 26:
               _context2.prev = 26;
 
-              this.enableSignals();
+              _this3.enableSignals();
               return _context2.finish(26);
 
             case 29:
@@ -598,15 +608,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               return _context2.stop();
           }
         }
-      }, _callee2, this, [[3, 23, 26, 29]]);
-    }));
+      }, _callee2, _this3, [[3, 23, 26, 29]]);
+    }))();
+  },
 
-    function _resetAsync(_x2) {
-      return _ref2.apply(this, arguments);
-    }
-
-    return _resetAsync;
-  }(),
 
   defaultProjection: {
     name: 'projection',

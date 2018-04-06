@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
@@ -24,6 +24,8 @@
     "vega-spec-injector": "^0.0.2"
   },
   "devDependencies": {
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-config-kartotherian": "^0.0.5",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-plugin-external-helpers": "^6.22.0",
@@ -42,7 +44,7 @@
     "pretest": "npm run lint",
     "precommit": "npm run lint",
     "build": "rollup -c rollup.config.js",
-    "prepare": "npm run build",
+    "prepare": "npm run lint && npm run build",
     "dev": "rollup -c rollup.config.js -w"
   }
 }

@@ -1,8 +1,9 @@
-import { version } from '../package.json';
 import Vsi from 'vega-spec-injector';
+// eslint-disable-next-line import/extensions,import/no-unresolved
 import L from 'leaflet';
+import { version } from '../package.json';
 
-L.vega = function (spec, options) {
+L.vega = function vega(spec, options) {
   return new L.VegaLayer(spec, options);
 };
 
@@ -10,6 +11,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   options: {
     // FIXME: uses window.vega
+    // eslint-disable-next-line no-undef
     vega: window && window.vega,
 
     // If Vega spec creates controls (inputs), put them all into this container
@@ -31,21 +33,24 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     onError: false,
   },
 
-  initialize: function (spec, options) {
+  initialize(spec, options) {
     L.Util.setOptions(this, options);
 
     // expression parsing in Vega is global,
     // ensure it hasn't been intialized before,
     // and make sure calls to setMapView() only happen
     // when the View instance was created by us
-    const vega = this.options.vega;
+    const { vega } = this.options;
     if (!vega.expressionFunction('setMapView')) {
-      vega.expressionFunction('setMapView',
-        function () {
-          const handler = this.context.dataflow.Leaflet_setMapViewHandler;
+      vega.expressionFunction(
+        'setMapView',
+        function setMapView(...args) {
+          const view = this.context.dataflow;
+          const handler = view.Leaflet_setMapViewHandler;
           if (!handler) throw new Error('setMapView() is not defined for this graph');
-          return handler(...arguments);
-        });
+          view.runAfter(() => handler(...args));
+        }
+      );
     }
     this._ignoreSignals = 0;
     this.disableSignals = () => {
@@ -55,17 +60,17 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       this._ignoreSignals--;
       if (this._ignoreSignals < 0) {
         this._ignoreSignals = 0;
-        throw new Error(`Too many calls to enableSignals()`);
+        throw new Error('Too many calls to enableSignals()');
       }
     };
 
     // Inject signals into the spec
     const vsi = new Vsi(options.onWarning);
 
-    vsi.overrideField(spec, `padding`, 0);
-    vsi.overrideField(spec, `autosize`, `none`);
-    vsi.addToList(spec, `signals`, [`zoom`, `latitude`, `longitude`]);
-    vsi.addToList(spec, `projections`, [this.defaultProjection]);
+    vsi.overrideField(spec, 'padding', 0);
+    vsi.overrideField(spec, 'autosize', 'none');
+    vsi.addToList(spec, 'signals', ['zoom', 'latitude', 'longitude']);
+    vsi.addToList(spec, 'projections', [this.defaultProjection]);
 
     this._spec = spec;
   },
@@ -74,34 +79,31 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
    * @param {L.Map} map
    * @return {L.VegaLayer}
    */
-  addTo: function (map) {
+  addTo(map) {
     map.addLayer(this);
     return this;
   },
 
-  onAdd: function (map) {
+  onAdd(map) {
     this._onAddAsync(map);
     return this;
   },
 
-  _onAddAsync: async function (map) {
+  async _onAddAsync(map) {
     this.disableSignals();
 
     try {
       this._map = map;
-      this._vegaContainer = L.DomUtil.create(`div`, `leaflet-vega-container`);
+      this._vegaContainer = L.DomUtil.create('div', 'leaflet-vega-container');
       map._panes.overlayPane.appendChild(this._vegaContainer);
 
-      const vega = this.options.vega;
+      const { vega, viewConfig } = this.options;
 
       const dataflow = vega.parse(this._spec, this.options.parseConfig);
 
-      const viewConfig = this.options.viewConfig;
       if (viewConfig && viewConfig.loader) {
         const oldLoad = viewConfig.loader.load.bind(viewConfig.loader);
-        viewConfig.loader.load = (uri, opt) => {
-          return oldLoad(uri, opt);
-        };
+        viewConfig.loader.load = (uri, opt) => oldLoad(uri, opt);
       }
       this._view = new vega.View(dataflow, viewConfig);
 
@@ -116,19 +118,21 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       }
 
       this._view
-        .padding({ left: 0, right: 0, top: 0, bottom: 0 })
+        .padding({
+          left: 0, right: 0, top: 0, bottom: 0,
+        })
         .initialize(this._vegaContainer, this.options.bindingsContainer)
         .hover();
 
       const onSignal = (sig, value) => this._onSignalChange(sig, value);
 
       this._view
-        .addSignalListener(`latitude`, onSignal)
-        .addSignalListener(`longitude`, onSignal)
-        .addSignalListener(`zoom`, onSignal);
+        .addSignalListener('latitude', onSignal)
+        .addSignalListener('longitude', onSignal)
+        .addSignalListener('zoom', onSignal);
 
-      map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._resetAsync());
-      map.on(`zoomend`, () => this._resetAsync());
+      map.on(this.options.delayRepaint ? 'moveend' : 'move', () => this._resetAsync());
+      map.on('zoomend', () => this._resetAsync());
 
       /**
        * Given longitude/latitude/zoom or bounding box, position the map to those coordinates
@@ -140,9 +144,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
        *  setMapView([[lng1,lat1],[lng2,lat2]])
        */
       this._view.Leaflet_setMapViewHandler = (...args) => {
-
         function throwError() {
-          throw new Error(`Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)`);
+          throw new Error('Unexpected setMapView() parameters -- it could be called with a bounding box setMapView([[longitude1,latitude1],[longitude2,latitude2]]), or it could be the center point setMapView([longitude, latitude], optional_zoom), or it can be used as setMapView(latitude, longitude, optional_zoom)');
         }
 
         function checkArray(val) {
@@ -154,17 +157,21 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
           return val;
         }
 
-        let lng, lat, zoom;
+        let lng;
+        let lat;
+        let zoom;
         switch (args.length) {
           default:
             throwError();
             break;
           case 1: {
             const arg = args[0];
-            if (Array.isArray(arg) && arg.length === 2 && Array.isArray(arg[0]) && Array.isArray(arg[1])) {
+            if (Array.isArray(arg) && arg.length === 2 &&
+              Array.isArray(arg[0]) && Array.isArray(arg[1])
+            ) {
               // called with a bounding box, need to reverse order
-              let [lng1, lat1] = checkArray(arg[0]);
-              let [lng2, lat2] = checkArray(arg[1]);
+              const [lng1, lat1] = checkArray(arg[0]);
+              const [lng2, lat2] = checkArray(arg[1]);
               map.fitBounds(L.latLngBounds(L.latLng(lat1, lng1), L.latLng(lat2, lng2)));
             } else {
               // called with a center point and no zoom
@@ -175,6 +182,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
           case 2:
             if (Array.isArray(args[0])) {
               [lng, lat] = checkArray(args[0]);
+              // eslint-disable-next-line prefer-destructuring
               zoom = args[1];
             } else {
               [lat, lng] = args;
@@ -207,7 +215,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
   },
 
-  onRemove: function () {
+  onRemove() {
     if (this._view) {
       this._view.finalize();
       this._view = null;
@@ -220,23 +228,23 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
   },
 
-  _onSignalChange: function (sig, value) {
+  _onSignalChange(sig, value) {
     if (this._ignoreSignals) {
       return;
     }
 
     const map = this._map;
-    let center = map.getCenter();
+    const center = map.getCenter();
     let zoom = map.getZoom();
 
     switch (sig) {
-      case `latitude`:
+      case 'latitude':
         center.lat = value;
         break;
-      case `longitude`:
+      case 'longitude':
         center.lng = value;
         break;
-      case `zoom`:
+      case 'zoom':
         zoom = value;
         break;
       default:
@@ -246,7 +254,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     map.setView(center, zoom);
   },
 
-  _resetAsync: async function (force) {
+  async _resetAsync(force) {
     if (!this._view) return;
 
     this.disableSignals();
@@ -260,7 +268,8 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       const center = map.getCenter();
       const zoom = map.getZoom();
 
-      // Only send changed signals to Vega. Detect if any of the signals have changed before calling run()
+      // Only send changed signals to Vega.
+      // Detect if any of the signals have changed before calling run()
       const sendSignal = (sig, value) => {
         if (view.signal(sig) !== value) {
           view.signal(sig, value);
@@ -270,11 +279,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       };
 
       let changed = 0;
-      changed |= sendSignal(`width`, size.x);
-      changed |= sendSignal(`height`, size.y);
-      changed |= sendSignal(`latitude`, center.lat);
-      changed |= sendSignal(`longitude`, center.lng);
-      changed |= sendSignal(`zoom`, zoom);
+      /* eslint-disable no-bitwise */
+      changed |= sendSignal('width', size.x);
+      changed |= sendSignal('height', size.y);
+      changed |= sendSignal('latitude', center.lat);
+      changed |= sendSignal('longitude', center.lng);
+      changed |= sendSignal('zoom', zoom);
+      /* eslint-enable */
 
       if (changed || force) {
         await view.runAsync();
@@ -282,7 +293,9 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     } catch (err) {
       if (this.options.onError) {
         this.options.onError(err);
+        // eslint-disable-next-line no-console
       } else if (console && console.error) {
+        // eslint-disable-next-line no-console
         console.error(err);
       }
     } finally {
@@ -291,12 +304,12 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   defaultProjection: {
-    name: `projection`,
-    type: `mercator`,
-    scale: { signal: `256*pow(2,zoom)/2/PI` },
-    rotate: [{ signal: `-longitude` }, 0, 0],
-    center: [0, { signal: `latitude` }],
-    translate: [{ signal: `width/2` }, { signal: `height/2` }],
+    name: 'projection',
+    type: 'mercator',
+    scale: { signal: '256*pow(2,zoom)/2/PI' },
+    rotate: [{ signal: '-longitude' }, 0, 0],
+    center: [0, { signal: 'latitude' }],
+    translate: [{ signal: 'width/2' }, { signal: 'height/2' }],
     fit: false,
   },
 
