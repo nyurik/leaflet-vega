@@ -4,16 +4,29 @@
   <meta charset="UTF-8">
   <title>Demo!</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/vega@3.0.10/build/vega.js"></script>
+  <script src="https://unpkg.com/vega@3.2.1/build/vega.js"></script>
   <script src="https://unpkg.com/regenerator-runtime@0.11.1/runtime.js"></script>
   <script src="../dist/bundle.js"></script>
+
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body, #map {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
 </head>
 
 <body>
 
-<div id="map" style="width: 1200px; height: 1024px;"></div>
+<div id="map"></div>
 
 
 <script>
@@ -21,8 +34,6 @@
 
   const spec = {
     "$schema": "https://vega.github.io/schema/vega/v3.0.json",
-    "width": 1000,
-    "height": 1000,
     "padding": 0,
     "autosize": "none",
 
@@ -30,12 +41,12 @@
       {
         "name": "unemp",
         "url": "https://vega.github.io/editor/data/unemployment.tsv",
-        "format": {"type": "tsv", "parse": "auto"}
+        "format": { "type": "tsv", "parse": "auto" }
       },
       {
         "name": "counties",
         "url": "https://vega.github.io/editor/data/us-10m.json",
-        "format": {"type": "topojson", "feature": "counties"},
+        "format": { "type": "topojson", "feature": "counties" },
         "transform": [
           { "type": "lookup", "from": "unemp", "key": "id", "fields": ["id"], "as": ["unemp"] },
           { "type": "filter", "expr": "datum.unemp != null" }
@@ -56,26 +67,37 @@
         "name": "color",
         "type": "quantize",
         "domain": [0, 0.15],
-        "range": {"scheme": "blues-9"}
+        "range": { "scheme": "blues-9" }
       }
     ],
 
     "marks": [
       {
+        "name": "region",
         "type": "shape",
-        "from": {"data": "counties"},
+        "from": { "data": "counties" },
         "encode": {
-          "enter": {"opacity": {"value": 0.4}},
+          "enter": { "opacity": { "value": 0.4 } },
           "update": {
-            "fill": {"scale": "color", "field": "unemp.rate"},
+            "fill": { "scale": "color", "field": "unemp.rate" },
             // "stroke": {"value": "#000"},
-            "tooltip": {"signal": "'Unemployment ' + format(datum.unemp.rate, ',.1%')"}
+            "tooltip": { "signal": "'Unemployment ' + format(datum.unemp.rate, ',.1%')" }
           },
-          "hover": { "fill": {"value": "red"} }
+          "hover": { "fill": { "value": "red" } }
         },
         "transform": [
           { "type": "geoshape", "projection": "projection" }
         ]
+      }
+    ],
+
+    "signals": [
+      {
+        "name": "clickedRegion",
+        "on": [{
+          "events": "@region:click",
+          "update": "setMapView(invert('projection',geoCentroid('projection', datum)))"
+        }]
       }
     ],
 
@@ -92,24 +114,24 @@
           "labels": {
             "interactive": true,
             "enter": {
-              "text": {"signal": "replace(datum.label,'–',' – ')"},
-              "fontSize": {"value": 12}
+              "text": { "signal": "replace(datum.label,'–',' – ')" },
+              "fontSize": { "value": 12 }
             },
             "update": {
-              "fill": {"value": "black"}
+              "fill": { "value": "black" }
             },
             "hover": {
-              "fill": {"value": "firebrick"}
+              "fill": { "value": "firebrick" }
             }
           },
-          "title": {"update": {"fontSize": {"value": 14}}},
+          "title": { "update": { "fontSize": { "value": 14 } } },
           "legend": {
             "enter": {
-              "stroke": {"value": "#000"},
-              "fill": {"value": "#fff"},
-              "fillOpacity": {"value": 0.6},
-              "strokeOpacity": {"value": 0.2},
-              "strokeWidth": {"value": 1.5}
+              "stroke": { "value": "#000" },
+              "fill": { "value": "#fff" },
+              "fillOpacity": { "value": 0.6 },
+              "strokeOpacity": { "value": 0.2 },
+              "strokeWidth": { "value": 1.5 }
             }
           }
         }
@@ -127,11 +149,17 @@
   L.marker([40.7128, -74.0059]).addTo(map)
     .bindPopup('A Leaflet marker popup<br><b>(on top of Vega)</b>');
 
-  L.vega(spec, {
+  const layer = L.vega(spec, {
     // Make sure the legend stays in place
     delayRepaint: true,
 
-  }).addTo(map);
+  });
+
+  layer.addTo(map);
+
+  window.VEGA_DEBUG = {
+    view: layer._view
+  };
 
 
 </script>

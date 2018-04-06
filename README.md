@@ -11,7 +11,7 @@ This Leaflet plugin adds a Vega layer on top of the map, and provides two way si
 * Clone the repo
 * open `demo/demo.html` file directly in your browser. No server is needed.
 
-# Usage
+# Usage (code)
 ```javascript
   const map = L.map('map');
 
@@ -30,7 +30,23 @@ Optionally, provide additional parameters to vegaLayer():
 * `viewConfig` - Options to be passed ot the Vega's View constructor
 
 
-# Vega defaults
+# Usage (Vega spec)
+
+Your Vega spec may read `latitude`, `longitude`, and `zoom` signals, as well as set new values to them, e.g. if you need to change zoom level dynamically.  Additionally, you may use `setMapView()` expression function to modify all of them at once. For example, if you have a set of regions on a map, and clicking the region should center the map, you can use this code (see demo file):
+```yaml
+"on": [{
+  "events": "@region:click",
+  "update": "setMapView(invert('projection',geoCentroid('projection', datum)))"
+}]
+```
+
+The `setMapView()` can be used in any of these forms:
+```yaml
+setMapView(latitude, longitude);
+setMapView(latitude, longitude, zoom);
+setMapView([longitude, latitude]); // one array argument
+setMapView([longitude, latitude], zoom); // one array and one number
+```
 
 All Vega specs are pre-populated with the following template. Your Vega graph may use any of the signals and the projection directly without declaring them, just like you use `width` or `height` signals.
 

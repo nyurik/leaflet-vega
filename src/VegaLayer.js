@@ -1,4 +1,4 @@
-import {version} from '../package.json';
+import { version } from '../package.json';
 import Vsi from 'vega-spec-injector';
 import L from 'leaflet';
 
@@ -33,6 +33,57 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   initialize: function (spec, options) {
     L.Util.setOptions(this, options);
+
+    // expression parsing in Vega is global,
+    // ensure it hasn't been intialized before,
+    // and make sure calls to setMapView() only happen
+    // when the View instance was created by us
+    const vega = this.options.vega;
+    if (!vega.expressionFunction('setMapView')) {
+      vega.expressionFunction('setMapView',
+        /**
+         * Given longitude/latitude/zoom, position the map to those coordinates
+         * The function can be called in one of the following ways:
+         *  setMapView(latitude, longitude)
+         *  setMapView(latitude, longitude, zoom)
+         *  setMapView([longitude, latitude])
+         *  setMapView([longitude, latitude], zoom)
+         */
+        function () {
+          const handler = this.context.dataflow.Leaflet_setMapViewHandler;
+          if (!handler) throw new Error('setMapView() is not defined for this graph');
+          let longitude, latitude, zoom;
+
+          function checkArray(val, ind) {
+            if (!val || !Array.isArray(val) || val.length !== 2 ||
+              typeof val[0] !== 'number' || typeof val[1] !== 'number'
+            ) {
+              throw new Error(`setMapView's ${ind} parameter must be a 2 value array [longitude, latitude], or it can be used as setMapView(latitude, longitude, optional_zoom)`);
+            }
+            return val;
+          }
+
+          switch (arguments.length) {
+            default:
+              throw new Error('Unexpected number of setMapView parameters');
+            case 1:
+              [longitude, latitude] = checkArray(arguments[0], '1st');
+              break;
+            case 2:
+              if (Array.isArray(arguments[0])) {
+                [longitude, latitude] = checkArray(arguments[0], '1st');
+                zoom = arguments[1];
+              } else {
+                [latitude, longitude] = arguments;
+              }
+              break;
+            case 3:
+              [latitude, longitude, zoom] = arguments;
+              break;
+          }
+          handler(latitude, longitude, zoom);
+        });
+    }
 
     this._ignoreSignals = 0;
     this.disableSignals = () => {
@@ -101,7 +152,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       }
 
       this._view
-        .padding({left: 0, right: 0, top: 0, bottom: 0})
+        .padding({ left: 0, right: 0, top: 0, bottom: 0 })
         .initialize(this._vegaContainer, this.options.bindingsContainer)
         .hover();
 
@@ -114,6 +165,14 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
 
       map.on(this.options.delayRepaint ? `moveend` : `move`, () => this._resetAsync());
       map.on(`zoomend`, () => this._resetAsync());
+
+      this._view.Leaflet_setMapViewHandler = (lat, lng, zoom) => {
+        if (zoom === undefined) {
+          zoom = map.getZoom();
+        }
+        map.setView({lat, lng}, zoom);
+        this._resetAsync(); // ignore promise
+      };
 
       await this._resetAsync(true);
     } catch (err) {
@@ -211,10 +270,10 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
   defaultProjection: {
     name: `projection`,
     type: `mercator`,
-    scale: {signal: `256*pow(2,zoom)/2/PI`},
-    rotate: [{signal: `-longitude`}, 0, 0],
-    center: [0, {signal: `latitude`}],
-    translate: [{signal: `width/2`}, {signal: `height/2`}],
+    scale: { signal: `256*pow(2,zoom)/2/PI` },
+    rotate: [{ signal: `-longitude` }, 0, 0],
+    center: [0, { signal: `latitude` }],
+    translate: [{ signal: `width/2` }, { signal: `height/2` }],
     fit: false,
   },
 

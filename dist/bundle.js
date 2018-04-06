@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.6.1 - Mon Feb 05 2018 19:01:33 GMT-0500 (EST)
+/* leaflet-vega - v0.7.0 - Fri Apr 06 2018 04:38:10 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -9,7 +9,7 @@
 
 L = L && L.hasOwnProperty('default') ? L['default'] : L;
 
-var version = "0.6.1";
+var version = "0.7.0";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -143,6 +143,74 @@ var asyncToGenerator = function (fn) {
   };
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+
 L.vega = function (spec, options) {
   return new L.VegaLayer(spec, options);
 };
@@ -176,6 +244,77 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     var _this = this;
 
     L.Util.setOptions(this, options);
+
+    // expression parsing in Vega is global,
+    // ensure it hasn't been intialized before,
+    // and make sure calls to setMapView() only happen
+    // when the View instance was created by us
+    var vega = this.options.vega;
+    if (!vega.expressionFunction('setMapView')) {
+      vega.expressionFunction('setMapView',
+      /**
+       * Given longitude/latitude/zoom, position the map to those coordinates
+       * The function can be called in one of the following ways:
+       *  setMapView(latitude, longitude)
+       *  setMapView(latitude, longitude, zoom)
+       *  setMapView([longitude, latitude])
+       *  setMapView([longitude, latitude], zoom)
+       */
+      function () {
+        var handler = this.context.dataflow.Leaflet_setMapViewHandler;
+        if (!handler) throw new Error('setMapView() is not defined for this graph');
+        var longitude = void 0,
+            latitude = void 0,
+            zoom = void 0;
+
+        function checkArray(val, ind) {
+          if (!val || !Array.isArray(val) || val.length !== 2 || typeof val[0] !== 'number' || typeof val[1] !== 'number') {
+            throw new Error('setMapView\'s ' + ind + ' parameter must be a 2 value array [longitude, latitude], or it can be used as setMapView(latitude, longitude, optional_zoom)');
+          }
+          return val;
+        }
+
+        switch (arguments.length) {
+          default:
+            throw new Error('Unexpected number of setMapView parameters');
+          case 1:
+            var _checkArray = checkArray(arguments[0], '1st');
+
+            var _checkArray2 = slicedToArray(_checkArray, 2);
+
+            longitude = _checkArray2[0];
+            latitude = _checkArray2[1];
+
+            break;
+          case 2:
+            if (Array.isArray(arguments[0])) {
+              var _checkArray3 = checkArray(arguments[0], '1st');
+
+              var _checkArray4 = slicedToArray(_checkArray3, 2);
+
+              longitude = _checkArray4[0];
+              latitude = _checkArray4[1];
+
+              zoom = arguments[1];
+            } else {
+              var _arguments = Array.prototype.slice.call(arguments);
+
+              latitude = _arguments[0];
+              longitude = _arguments[1];
+            }
+            break;
+          case 3:
+            var _arguments2 = Array.prototype.slice.call(arguments);
+
+            latitude = _arguments2[0];
+            longitude = _arguments2[1];
+            zoom = _arguments2[2];
+
+            break;
+        }
+        handler(latitude, longitude, zoom);
+      });
+    }
 
     this._ignoreSignals = 0;
     this.disableSignals = function () {
@@ -267,33 +406,41 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
                 return _this2._resetAsync();
               });
 
-              _context.next = 19;
+              this._view.Leaflet_setMapViewHandler = function (lat, lng, zoom) {
+                if (zoom === undefined) {
+                  zoom = map.getZoom();
+                }
+                map.setView({ lat: lat, lng: lng }, zoom);
+                _this2._resetAsync(); // ignore promise
+              };
+
+              _context.next = 20;
               return this._resetAsync(true);
 
-            case 19:
-              _context.next = 24;
+            case 20:
+              _context.next = 25;
               break;
 
-            case 21:
-              _context.prev = 21;
+            case 22:
+              _context.prev = 22;
               _context.t0 = _context['catch'](1);
 
               if (this.options.onError) {
                 this.options.onError(_context.t0);
               }
 
-            case 24:
-              _context.prev = 24;
+            case 25:
+              _context.prev = 25;
 
               this.enableSignals();
-              return _context.finish(24);
+              return _context.finish(25);
 
-            case 27:
+            case 28:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, this, [[1, 21, 24, 27]]);
+      }, _callee, this, [[1, 22, 25, 28]]);
     }));
 
     function _onAddAsync(_x) {
