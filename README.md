@@ -26,8 +26,8 @@ This Leaflet plugin adds a Vega layer on top of the map, and provides two way si
 
 Optionally, provide additional parameters to vegaLayer():
 * `vega` - custom instance of Vega library
-* `parseConfig` - Options to be passed to the Vega's parse method
-* `viewConfig` - Options to be passed ot the Vega's View constructor
+* `parseConfig` - Options to be passed to the Vega parse method
+* `viewConfig` - Options to be passed ot the Vega View constructor
 
 
 # Usage (Vega spec)
@@ -62,8 +62,8 @@ All Vega specs are pre-populated with the following template. Your Vega graph ma
   "delayRepaint": true,
 
   // These signals are two-way bound with Leaflet
-  // A vega spec may alter the declaration to update signal's value when needed
-  // For example, your spec may override zoom/lat/long definition to control map's position:
+  // A vega spec may alter the declaration to update signal value when needed
+  // For example, your spec may override zoom/lat/long definition to control map position:
   //    {"name": "zoom", "on": ..., "update": ...}
   "signals": [
     {"name": "zoom"},
@@ -76,7 +76,7 @@ All Vega specs are pre-populated with the following template. Your Vega graph ma
     {
       "name": "projection",
       "type": "mercator",
-      // 256 is the tile size in pixels. The world's width is (256 * 2^zoom)
+      // 256 is the tile size in pixels. The world width is (256 * 2^zoom)
       // d3 mercator scaling is (world / 2 / PI)
       "scale": {"signal": "256*pow(2,zoom)/2/PI"},
       "rotate": [{"signal": "-longitude"}, 0, 0],
