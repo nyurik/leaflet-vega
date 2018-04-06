@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.8.3 - Fri Apr 06 2018 19:00:22 GMT+0300 (MSK)
+/* leaflet-vega - v0.8.4 - Sat Apr 07 2018 02:32:23 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -112,7 +112,7 @@ var _class = function () {
   return _class;
 }();
 
-var version = "0.8.3";
+var version = "0.8.4";
 
 var asyncToGenerator = function (fn) {
   return function () {
