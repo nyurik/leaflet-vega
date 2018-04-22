@@ -207,9 +207,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       };
       await this._resetAsync(true);
     } catch (err) {
-      if (this.options.onError) {
-        this.options.onError(err);
-      }
+      this._reportError(err);
     } finally {
       this.enableSignals();
     }
@@ -228,30 +226,44 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
   },
 
+  _reportError(err) {
+    /* eslint-disable no-console */
+    if (this.options.onError) {
+      this.options.onError(err);
+    } else if (console && console.error) {
+      console.error(err);
+    }
+    /* eslint-enable */
+  },
+
   _onSignalChange(sig, value) {
     if (this._ignoreSignals) {
       return;
     }
 
-    const map = this._map;
-    const center = map.getCenter();
-    let zoom = map.getZoom();
+    try {
+      const map = this._map;
+      const center = map.getCenter();
+      let zoom = map.getZoom();
 
-    switch (sig) {
-      case 'latitude':
-        center.lat = value;
-        break;
-      case 'longitude':
-        center.lng = value;
-        break;
-      case 'zoom':
-        zoom = value;
-        break;
-      default:
-        return; // ignore
+      switch (sig) {
+        case 'latitude':
+          center.lat = value;
+          break;
+        case 'longitude':
+          center.lng = value;
+          break;
+        case 'zoom':
+          zoom = value;
+          break;
+        default:
+          return; // ignore
+      }
+
+      map.setView(center, zoom);
+    } catch (err) {
+      this._reportError(err);
     }
-
-    map.setView(center, zoom);
   },
 
   async _resetAsync(force) {
@@ -290,13 +302,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
         await view.runAsync();
       }
     } catch (err) {
-      if (this.options.onError) {
-        this.options.onError(err);
-        // eslint-disable-next-line no-console
-      } else if (console && console.error) {
-        // eslint-disable-next-line no-console
-        console.error(err);
-      }
+      this._reportError(err);
     } finally {
       this.enableSignals();
     }

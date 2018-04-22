@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.8.5 - Sat Apr 07 2018 02:35:11 GMT+0300 (MSK)
+/* leaflet-vega - v0.8.6 - Mon Apr 23 2018 00:57:57 GMT+0300 (MSK)
  * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -112,7 +112,7 @@ var _class = function () {
   return _class;
 }();
 
-var version = "0.8.5";
+var version = "0.8.6";
 
 var asyncToGenerator = function (fn) {
   return function () {
@@ -467,9 +467,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               _context.prev = 22;
               _context.t0 = _context['catch'](1);
 
-              if (_this2.options.onError) {
-                _this2.options.onError(_context.t0);
-              }
+              _this2._reportError(_context.t0);
 
             case 25:
               _context.prev = 25;
@@ -497,30 +495,43 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
       el.removeChild(el.firstChild);
     }
   },
+  _reportError: function _reportError(err) {
+    /* eslint-disable no-console */
+    if (this.options.onError) {
+      this.options.onError(err);
+    } else if (console && console.error) {
+      console.error(err);
+    }
+    /* eslint-enable */
+  },
   _onSignalChange: function _onSignalChange(sig, value) {
     if (this._ignoreSignals) {
       return;
     }
 
-    var map = this._map;
-    var center = map.getCenter();
-    var zoom = map.getZoom();
+    try {
+      var map = this._map;
+      var center = map.getCenter();
+      var zoom = map.getZoom();
 
-    switch (sig) {
-      case 'latitude':
-        center.lat = value;
-        break;
-      case 'longitude':
-        center.lng = value;
-        break;
-      case 'zoom':
-        zoom = value;
-        break;
-      default:
-        return; // ignore
+      switch (sig) {
+        case 'latitude':
+          center.lat = value;
+          break;
+        case 'longitude':
+          center.lng = value;
+          break;
+        case 'zoom':
+          zoom = value;
+          break;
+        default:
+          return; // ignore
+      }
+
+      map.setView(center, zoom);
+    } catch (err) {
+      this._reportError(err);
     }
-
-    map.setView(center, zoom);
   },
   _resetAsync: function _resetAsync(force) {
     var _this3 = this;
@@ -584,13 +595,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               _context2.prev = 18;
               _context2.t0 = _context2['catch'](3);
 
-              if (_this3.options.onError) {
-                _this3.options.onError(_context2.t0);
-                // eslint-disable-next-line no-console
-              } else if (console && console.error) {
-                // eslint-disable-next-line no-console
-                console.error(_context2.t0);
-              }
+              _this3._reportError(_context2.t0);
 
             case 21:
               _context2.prev = 21;
