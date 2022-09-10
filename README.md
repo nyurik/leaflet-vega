@@ -26,8 +26,9 @@ This Leaflet plugin adds a Vega layer on top of the map, and provides two way si
 
 Optionally, provide additional parameters to vegaLayer():
 * `vega` - custom instance of Vega library
-* `parseConfig` - Options to be passed to the Vega parse method
-* `viewConfig` - Options to be passed ot the Vega View constructor
+* `parseConfig` - Config to be passed to the Vega parse method
+* `parseOptions` - Options to be passed to the Vega parse method
+* `viewConfig` - Config to be passed ot the Vega View constructor
 
 
 # Usage (Vega spec)
