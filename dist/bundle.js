@@ -1,5 +1,5 @@
-/* leaflet-vega - v0.8.6 - Mon Apr 23 2018 00:57:57 GMT+0300 (MSK)
- * Copyright (c) 2018 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
+/* leaflet-vega - v0.8.7 - Sun Sep 11 2022 11:26:23 GMT-0700 (Pacific Daylight Time)
+ * Copyright (c) 2022 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
@@ -112,7 +112,7 @@ var _class = function () {
   return _class;
 }();
 
-var version = "0.8.6";
+var version = "0.8.7";
 
 var asyncToGenerator = function (fn) {
   return function () {
@@ -226,10 +226,13 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
     // If Vega spec creates controls (inputs), put them all into this container
     bindingsContainer: undefined,
 
-    // Options to be passed to the Vega`s parse method
+    // Config to be passed to the Vega`s parse method
     parseConfig: undefined,
 
-    // Options to be passed ot the Vega`s View constructor
+    // Options to be passed to the Vega`s parse method
+    parseOptions: undefined,
+
+    // Config to be passed ot the Vega`s View constructor
     viewConfig: undefined,
 
     // If true, graph will be repainted only after the map has finished moving (faster)
@@ -322,7 +325,7 @@ L.VegaLayer = (L.Layer ? L.Layer : L.Class).extend({
               map._panes.overlayPane.appendChild(_this2._vegaContainer);
 
               _options = _this2.options, vega = _options.vega, viewConfig = _options.viewConfig;
-              dataflow = vega.parse(_this2._spec, _this2.options.parseConfig);
+              dataflow = vega.parse(_this2._spec, _this2.options.parseConfig, _this2.options.parseOptions);
 
 
               if (viewConfig && viewConfig.loader) {
