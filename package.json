@@ -1,6 +1,6 @@
 {
   "name": "leaflet-vega",
-  "version": "0.8.7",
+  "version": "0.9.0",
   "description": "Vega layer for Leaflet",
   "homepage": "https://github.com/nyurik/leaflet-vega",
   "author": "Yuri Astrakhan <YuriAstrakhan@gmail.com>",
@@ -24,14 +24,14 @@
     "vega-spec-injector": "^0.0.2"
   },
   "devDependencies": {
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-config-kartotherian": "^0.0.5",
     "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
-    "eslint": "^4.17.0",
-    "eslint-config-mourner": "^2.0.3",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^8.27.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-kartotherian": "^0.0.5",
+    "eslint-config-mourner": "^3.0.0",
     "rollup": "^0.55.3",
     "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-json": "^2.3.0",
@@ -40,7 +40,7 @@
   },
   "scripts": {
     "test": "eslint src",
-    "lint": "eslint src/*.js test/test*.js",
+    "lint": "eslint src/*.*js",
     "pretest": "npm run lint",
     "precommit": "npm run lint",
     "build": "rollup -c rollup.config.js",

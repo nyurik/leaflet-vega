@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.8.7 - Sun Sep 11 2022 11:26:23 GMT-0700 (Pacific Daylight Time)
+/* leaflet-vega - v0.9.0 - Mon Nov 14 2022 18:48:56 GMT-0500 (Eastern Standard Time)
  * Copyright (c) 2022 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
@@ -112,7 +112,7 @@ var _class = function () {
   return _class;
 }();
 
-var version = "0.8.7";
+var version = "0.9.0";
 
 var asyncToGenerator = function (fn) {
   return function () {
