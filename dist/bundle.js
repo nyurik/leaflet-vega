@@ -1,4 +1,4 @@
-/* leaflet-vega - v0.9.0 - Mon Nov 14 2022 18:48:56 GMT-0500 (Eastern Standard Time)
+/* leaflet-vega - v0.9.0 - Mon Nov 14 2022 19:01:43 GMT-0500 (Eastern Standard Time)
  * Copyright (c) 2022 Yuri Astrakhan <YuriAstrakhan@gmail.com> 
  * BSD-2-Clause */
 (function (global, factory) {
